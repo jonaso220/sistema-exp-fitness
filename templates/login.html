@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Iniciar Sesión</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuario</label>
+                        <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                        <div class="invalid-feedback">
+                            Por favor ingresa tu nombre de usuario.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                        <div class="invalid-feedback">
+                            Por favor ingresa tu contraseña.
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        </button>
+                        <a href="{{ url_for('google.login') }}" class="btn btn-danger btn-lg">
+                            <i class="fab fa-google"></i> Iniciar Sesión con Google
+                        </a>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p>¿No tienes una cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Registrar Nueva Actividad</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="exercise_type" class="form-label">Tipo de Ejercicio</label>
+                        <select class="form-select form-select-lg" id="exercise_type" name="exercise_type" required>
+                            <option value="">Selecciona un ejercicio</option>
+                            <option value="Cardio">Cardio</option>
+                            <option value="Pesas">Pesas</option>
+                            <option value="Yoga">Yoga</option>
+                            <option value="Natación">Natación</option>
+                            <option value="Ciclismo">Ciclismo</option>
+                            <option value="Calistenia">Calistenia</option>
+                            <option value="HIIT">HIIT</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Por favor selecciona un tipo de ejercicio.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Duración (minutos)</label>
+                        <input type="number" class="form-control form-control-lg" id="duration" name="duration" 
+                               required min="1" placeholder="Ej: 30">
+                        <div class="invalid-feedback">
+                            Por favor ingresa una duración válida.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="intensity" class="form-label">Intensidad</label>
+                        <select class="form-select form-select-lg" id="intensity" name="intensity" required>
+                            <option value="low">Baja</option>
+                            <option value="medium">Media</option>
+                            <option value="high">Alta</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Por favor selecciona una intensidad.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="weight" class="form-label">Peso Actual (kg)</label>
+                        <input type="number" class="form-control form-control-lg" id="weight" name="weight" 
+                               step="0.1" required placeholder="Ej: 70.5">
+                        <div class="invalid-feedback">
+                            Por favor ingresa tu peso actual.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="evidence" name="evidence">
+                            <label class="form-check-label" for="evidence">
+                                Tengo evidencia (foto/video) del ejercicio
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Registrar Actividad
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validación del formulario
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+{% endblock %}

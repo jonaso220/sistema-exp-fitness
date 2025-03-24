@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .level-badge {
+        font-size: 2rem;
+        color: #ffc107;
+    }
+    .streak-badge {
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+    .progress {
+        height: 25px;
+    }
+    .progress-bar {
+        font-size: 1rem;
+        line-height: 25px;
+    }
+</style>
+
+<div class="row g-4">
+    <div class="col-12 col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="mb-3">Nivel {{ user.level }}</h3>
+                <div class="level-badge mb-3">
+                    <i class="fas fa-star"></i> {{ user.level }}
+                </div>
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 0"
+                         data-progress="{{ progress }}"
+                         aria-valuenow="{{ progress }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        {{ "%.1f"|format(user.exp) }}/{{ exp_for_next }} EXP
+                    </div>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const progressBar = document.querySelector('.progress-bar');
+                        const progress = progressBar.dataset.progress;
+                        progressBar.style.width = progress + '%';
+                    });
+                </script>
+                {% if streak > 0 %}
+                <div class="streak-badge">
+                    <i class="fas fa-fire"></i> Racha: {{ streak }} días
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h4 class="mb-0">Últimas Actividades</h4>
+            </div>
+            <div class="card-body">
+                {% if activities %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Ejercicio</th>
+                                <th>Duración</th>
+                                <th>Intensidad</th>
+                                <th>EXP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>{{ activity.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ activity.exercise_type }}</td>
+                                <td>{{ activity.duration }} min</td>
+                                <td>
+                                    {% if activity.intensity == 'low' %}
+                                    <span class="badge bg-success">Baja</span>
+                                    {% elif activity.intensity == 'medium' %}
+                                    <span class="badge bg-warning">Media</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Alta</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ "%.1f"|format(activity.exp_gained) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">No hay actividades registradas aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('add_activity') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus"></i> Registrar Nueva Actividad
+        </a>
+    </div>
+</div>
+{% endblock %}

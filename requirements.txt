@@ -1,0 +1,9 @@
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Werkzeug==3.0.1
+python-dotenv==1.0.0
+Pillow==10.1.0
+Flask-Dance[sqla]==7.0.0
+oauthlib==3.2.2
+requests==2.31.0
