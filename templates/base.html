@@ -44,13 +44,31 @@
             height: 100%;
             margin-bottom: 1rem;
         }
+        .card-body {
+            padding: 1.25rem;
+            padding-bottom: 0.5rem;
+        }
         .btn {
             white-space: nowrap;
             margin: 0.25rem;
         }
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
         .navbar-brand {
+            display: flex;
+            align-items: center;
             font-size: 1.25rem;
             padding: 0.5rem 0;
+        }
+        .navbar-logo {
+            height: 40px;
+            margin-right: 10px;
+        }
+        .display-4 {
+            font-weight: 700;  
+            letter-spacing: -0.5px;  
         }
         @media (max-width: 768px) {
             .container {
@@ -64,7 +82,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-dumbbell"></i> Sistema EXP Fitness
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Sistema EXP Fitness Logo" class="navbar-logo">
             </a>
             {% if current_user.is_authenticated %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
