@@ -7,3 +7,4 @@ Pillow==10.1.0
 Flask-Dance[sqla]==7.0.0
 oauthlib==3.2.2
 requests==2.31.0
+gunicorn==21.2.0
