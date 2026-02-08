@@ -25,3 +25,5 @@ ENV/
 instance/
 .webassets-cache
 .DS_Store
+serviceAccountKey.json
+firebase-credentials.json

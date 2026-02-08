@@ -12,7 +12,7 @@
 
 # Las variables de entorno se configuran en el dashboard de Netlify:
 # - SECRET_KEY
-# - DATABASE_URL (requerido para persistencia real)
+# - FIREBASE_CREDENTIALS (JSON del service account de Firebase)
 # - GOOGLE_CLIENT_ID
 # - GOOGLE_CLIENT_SECRET
 
