@@ -5,7 +5,7 @@
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Registrar Actividad</h4>
+                <h4 class="mb-0"><i class="fas fa-edit"></i> Editar Actividad</h4>
             </div>
             <div class="card-body">
                 <form method="POST" class="needs-validation" novalidate>
@@ -13,67 +13,57 @@
                     <div class="mb-3">
                         <label for="exercise_type" class="form-label">Tipo de Ejercicio</label>
                         <select class="form-select form-select-lg" id="exercise_type" name="exercise_type" required>
-                            <option value="">Selecciona un ejercicio</option>
-                            <option value="Cardio">Cardio</option>
-                            <option value="Pesas">Pesas</option>
-                            <option value="Yoga">Yoga</option>
-                            <option value="Natacion">Natacion</option>
-                            <option value="Ciclismo">Ciclismo</option>
-                            <option value="Calistenia">Calistenia</option>
-                            <option value="HIIT">HIIT</option>
-                            <option value="Otro">Otro</option>
+                            {% for t in ['Cardio', 'Pesas', 'Yoga', 'Natacion', 'Ciclismo', 'Calistenia', 'HIIT', 'Otro'] %}
+                            <option value="{{ t }}" {{ 'selected' if activity.exercise_type == t }}>{{ t }}</option>
+                            {% endfor %}
                         </select>
-                        <div class="invalid-feedback">Por favor selecciona un tipo de ejercicio.</div>
                     </div>
 
                     <div class="mb-3">
                         <label for="duration" class="form-label">Duracion (minutos)</label>
                         <input type="number" class="form-control form-control-lg" id="duration" name="duration"
-                               required min="1" max="1440" placeholder="Ej: 30">
-                        <div class="invalid-feedback">Duracion debe ser entre 1 y 1440 minutos.</div>
+                               required min="1" max="1440" value="{{ activity.duration }}">
                     </div>
 
                     <div class="mb-3">
                         <label for="intensity" class="form-label">Intensidad</label>
                         <select class="form-select form-select-lg" id="intensity" name="intensity" required>
-                            <option value="low">Baja (x1 EXP)</option>
-                            <option value="medium" selected>Media (x1.5 EXP)</option>
-                            <option value="high">Alta (x2 EXP)</option>
+                            <option value="low" {{ 'selected' if activity.intensity == 'low' }}>Baja (x1 EXP)</option>
+                            <option value="medium" {{ 'selected' if activity.intensity == 'medium' }}>Media (x1.5 EXP)</option>
+                            <option value="high" {{ 'selected' if activity.intensity == 'high' }}>Alta (x2 EXP)</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label for="weight" class="form-label">Peso Actual (kg)</label>
+                        <label for="weight" class="form-label">Peso (kg)</label>
                         <input type="number" class="form-control form-control-lg" id="weight" name="weight"
                                step="0.1" required min="10" max="500"
-                               value="{{ user_weight if user_weight else '' }}"
-                               placeholder="Ej: 70.5">
-                        <div class="invalid-feedback">Peso debe ser entre 10 y 500 kg.</div>
+                               value="{{ activity.weight_recorded or '' }}">
                     </div>
 
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input type="checkbox" class="form-check-input" id="evidence" name="evidence"
+                                   {{ 'checked' if activity.has_evidence }}
                                    onchange="document.getElementById('evidence-url-group').style.display = this.checked ? 'block' : 'none'">
                             <label class="form-check-label" for="evidence">
-                                Tengo evidencia del ejercicio (+20% EXP)
+                                Tengo evidencia (+20% EXP)
                             </label>
                         </div>
                     </div>
 
-                    <div class="mb-4" id="evidence-url-group" style="display: none;">
-                        <label for="evidence_url" class="form-label">URL de evidencia (opcional)</label>
+                    <div class="mb-4" id="evidence-url-group" style="{{ 'display:block' if activity.has_evidence else 'display:none' }}">
+                        <label for="evidence_url" class="form-label">URL de evidencia</label>
                         <input type="url" class="form-control" id="evidence_url" name="evidence_url"
-                               placeholder="https://ejemplo.com/mi-foto.jpg">
-                        <div class="form-text">Pega un enlace a tu foto o video.</div>
+                               value="{{ activity.evidence_url or '' }}">
                     </div>
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save"></i> Registrar Actividad
+                            <i class="fas fa-save"></i> Guardar Cambios
                         </button>
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                        <a href="{{ url_for('history') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
                         </a>
                     </div>
                 </form>

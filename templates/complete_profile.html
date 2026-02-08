@@ -10,6 +10,7 @@
             <div class="card-body">
                 <p class="text-muted mb-3">Para personalizar tu experiencia, necesitamos tu peso inicial.</p>
                 <form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="weight" class="form-label">Peso Inicial (kg)</label>
                         <input type="number" class="form-control form-control-lg"
