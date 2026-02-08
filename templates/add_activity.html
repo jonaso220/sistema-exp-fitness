@@ -5,7 +5,7 @@
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0">Registrar Nueva Actividad</h4>
+                <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Registrar Actividad</h4>
             </div>
             <div class="card-body">
                 <form method="POST" class="needs-validation" novalidate>
@@ -16,7 +16,7 @@
                             <option value="Cardio">Cardio</option>
                             <option value="Pesas">Pesas</option>
                             <option value="Yoga">Yoga</option>
-                            <option value="Natación">Natación</option>
+                            <option value="Natacion">Natacion</option>
                             <option value="Ciclismo">Ciclismo</option>
                             <option value="Calistenia">Calistenia</option>
                             <option value="HIIT">HIIT</option>
@@ -28,48 +28,56 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="duration" class="form-label">Duración (minutos)</label>
-                        <input type="number" class="form-control form-control-lg" id="duration" name="duration" 
+                        <label for="duration" class="form-label">Duracion (minutos)</label>
+                        <input type="number" class="form-control form-control-lg" id="duration" name="duration"
                                required min="1" placeholder="Ej: 30">
                         <div class="invalid-feedback">
-                            Por favor ingresa una duración válida.
+                            Por favor ingresa una duracion valida.
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label for="intensity" class="form-label">Intensidad</label>
                         <select class="form-select form-select-lg" id="intensity" name="intensity" required>
-                            <option value="low">Baja</option>
-                            <option value="medium">Media</option>
-                            <option value="high">Alta</option>
+                            <option value="low">Baja (x1 EXP)</option>
+                            <option value="medium" selected>Media (x1.5 EXP)</option>
+                            <option value="high">Alta (x2 EXP)</option>
                         </select>
-                        <div class="invalid-feedback">
-                            Por favor selecciona una intensidad.
-                        </div>
                     </div>
 
                     <div class="mb-3">
                         <label for="weight" class="form-label">Peso Actual (kg)</label>
-                        <input type="number" class="form-control form-control-lg" id="weight" name="weight" 
+                        <input type="number" class="form-control form-control-lg" id="weight" name="weight"
                                step="0.1" required placeholder="Ej: 70.5">
                         <div class="invalid-feedback">
                             Por favor ingresa tu peso actual.
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="evidence" name="evidence">
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="evidence" name="evidence"
+                                   onchange="document.getElementById('evidence-url-group').style.display = this.checked ? 'block' : 'none'">
                             <label class="form-check-label" for="evidence">
-                                Tengo evidencia (foto/video) del ejercicio
+                                Tengo evidencia del ejercicio (+20% EXP)
                             </label>
                         </div>
+                    </div>
+
+                    <div class="mb-4" id="evidence-url-group" style="display: none;">
+                        <label for="evidence_url" class="form-label">URL de evidencia (opcional)</label>
+                        <input type="url" class="form-control" id="evidence_url" name="evidence_url"
+                               placeholder="https://ejemplo.com/mi-foto.jpg">
+                        <div class="form-text">Puedes pegar un enlace a tu foto o video de evidencia.</div>
                     </div>
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-save"></i> Registrar Actividad
                         </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                        </a>
                     </div>
                 </form>
             </div>
@@ -78,7 +86,6 @@
 </div>
 
 <script>
-// Validación del formulario
 (function () {
     'use strict'
     var forms = document.querySelectorAll('.needs-validation')

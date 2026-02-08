@@ -1,0 +1,22 @@
+{
+    "name": "Sistema EXP Fitness",
+    "short_name": "EXP Fitness",
+    "description": "Gamifica tu entrenamiento con sistema de niveles y experiencia",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0d1117",
+    "theme_color": "#0d1117",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/static/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0"><i class="fas fa-history"></i> Historial de Actividades</h3>
+    <span class="badge bg-info fs-6">{{ total }} actividades</span>
+</div>
+
+{% if activities %}
+<div class="card mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Ejercicio</th>
+                        <th>Duracion</th>
+                        <th>Intensidad</th>
+                        <th>Peso</th>
+                        <th>EXP</th>
+                        <th>Evidencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in activities %}
+                    <tr>
+                        <td>
+                            {% if activity.date.strftime is defined %}
+                                {{ activity.date.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                {{ activity.date }}
+                            {% endif %}
+                        </td>
+                        <td>{{ activity.exercise_type }}</td>
+                        <td>{{ activity.duration }} min</td>
+                        <td>
+                            {% if activity.intensity == 'low' %}
+                            <span class="badge bg-success">Baja</span>
+                            {% elif activity.intensity == 'medium' %}
+                            <span class="badge bg-warning">Media</span>
+                            {% else %}
+                            <span class="badge bg-danger">Alta</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if activity.weight_recorded %}
+                                {{ "%.1f"|format(activity.weight_recorded) }} kg
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td><span class="text-success">+{{ "%.1f"|format(activity.exp_gained) }}</span></td>
+                        <td>
+                            {% if activity.has_evidence %}
+                                {% if activity.evidence_url %}
+                                <a href="{{ activity.evidence_url }}" target="_blank" class="text-info">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                                {% else %}
+                                <i class="fas fa-check text-success"></i>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav aria-label="Paginacion">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {{ 'disabled' if page <= 1 }}">
+            <a class="page-link" href="{{ url_for('history', page=page-1) }}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <li class="page-item active">
+                <span class="page-link">{{ p }}</span>
+            </li>
+            {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('history', page=p) }}">{{ p }}</a>
+            </li>
+            {% elif p == page - 3 or p == page + 3 %}
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('history', page=page+1) }}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-running fa-3x text-muted mb-3"></i>
+        <p class="text-muted fs-5">No hay actividades registradas aun.</p>
+        <a href="{{ url_for('add_activity') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus"></i> Registrar Primera Actividad
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
