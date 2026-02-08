@@ -15,7 +15,8 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fitness.db'
+default_db = 'sqlite:////tmp/fitness.db' if os.getenv('NETLIFY') else 'sqlite:///fitness.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', default_db)
 app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
 app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
 
@@ -62,6 +63,9 @@ class Activity(db.Model):
     exp_gained = db.Column(db.Float)
     has_evidence = db.Column(db.Boolean, default=False)
     weight_recorded = db.Column(db.Float)
+
+with app.app_context():
+    db.create_all()
 
 def calculate_exp_for_next_level(current_level):
     return math.floor(100 * (current_level ** 1.5))
@@ -269,6 +273,4 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
