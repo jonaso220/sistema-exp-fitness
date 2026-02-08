@@ -1,12 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_dance.contrib.google import make_google_blueprint, google
-from flask_dance.consumer import oauth_authorized
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, auth as firebase_auth
 import json
 import math
 import os
@@ -88,14 +86,6 @@ class User(UserMixin):
             setattr(self, key, value)
         db.collection('users').document(self.id).update(kwargs)
 
-
-# Google OAuth
-google_bp = make_google_blueprint(
-    client_id=os.getenv('GOOGLE_CLIENT_ID'),
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    scope=['profile', 'email'],
-)
-app.register_blueprint(google_bp, url_prefix='/login')
 
 
 def calculate_exp_for_next_level(current_level):
@@ -284,50 +274,51 @@ def logout():
     return redirect(url_for('index'))
 
 
-@oauth_authorized.connect_via(google_bp)
-def google_logged_in(blueprint, token):
-    if not token:
+@app.route('/auth/google', methods=['POST'])
+def auth_google():
+    id_token = request.form.get('id_token')
+    if not id_token:
         flash('Error al iniciar sesión con Google.', 'danger')
-        return False
+        return redirect(url_for('login'))
 
-    resp = blueprint.session.get('/oauth2/v1/userinfo')
-    if not resp.ok:
-        flash('Error al obtener información del usuario de Google.', 'danger')
-        return False
+    try:
+        decoded_token = firebase_auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        email = decoded_token.get('email')
 
-    google_info = resp.json()
-    google_user_id = str(google_info['id'])
+        user = User.get_by_field('google_id', uid)
 
-    user = User.get_by_field('google_id', google_user_id)
+        if not user:
+            if email and User.get_by_field('email', email):
+                flash('El email ya está registrado con otra cuenta.', 'danger')
+                return redirect(url_for('login'))
 
-    if not user:
-        email = google_info.get('email')
-        if User.get_by_field('email', email):
-            flash('El email ya está registrado con otra cuenta.', 'danger')
-            return False
+            username = email.split('@')[0] if email else uid[:8]
+            base_username = username
+            counter = 1
+            while User.get_by_field('username', username):
+                username = f"{base_username}{counter}"
+                counter += 1
 
-        username = email.split('@')[0]
-        base_username = username
-        counter = 1
-        while User.get_by_field('username', username):
-            username = f"{base_username}{counter}"
-            counter += 1
+            doc_ref = db.collection('users').document()
+            user = User(
+                id=doc_ref.id,
+                username=username,
+                email=email,
+                google_id=uid,
+            )
+            user.save()
+            login_user(user)
+            flash('¡Cuenta creada exitosamente! Por favor ingresa tu peso inicial.', 'success')
+            return redirect(url_for('complete_profile'))
 
-        doc_ref = db.collection('users').document()
-        user = User(
-            id=doc_ref.id,
-            username=username,
-            email=email,
-            google_id=google_user_id,
-        )
-        user.save()
         login_user(user)
-        flash('¡Cuenta creada exitosamente! Por favor ingresa tu peso inicial.', 'success')
-        return redirect(url_for('complete_profile'))
+        flash('Inicio de sesión con Google exitoso.', 'success')
+        return redirect(url_for('dashboard'))
 
-    login_user(user)
-    flash('Inicio de sesión con Google exitoso.', 'success')
-    return False
+    except Exception:
+        flash('Error al verificar la sesión de Google.', 'danger')
+        return redirect(url_for('login'))
 
 
 @app.route('/complete-profile', methods=['GET', 'POST'])
