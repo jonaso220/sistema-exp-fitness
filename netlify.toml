@@ -1,5 +1,5 @@
 [build]
-  command = "mkdir -p dist/static && cp -r static/* dist/static/"
+  command = "mkdir -p dist/static && cp -r static/* dist/static/ && cp requirements.txt netlify/functions/"
   publish = "dist"
   functions = "netlify/functions"
 
