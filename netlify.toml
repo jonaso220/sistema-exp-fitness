@@ -1,10 +1,9 @@
 [build]
   command = "mkdir -p dist/static && cp -r static/* dist/static/"
   publish = "dist"
+  functions = "netlify/functions"
 
 [functions]
-  directory = "netlify/functions"
-  python_bundler = "pip"
   included_files = [
     "app.py",
     "templates/**"
