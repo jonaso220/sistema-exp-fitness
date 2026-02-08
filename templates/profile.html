@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="card mb-4">
+    <div class="card-body text-center py-4">
+        <div class="mb-3">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--gradient-primary); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
+                <i class="fas fa-user"></i>
+            </div>
+        </div>
+        <h3 class="mb-1">{{ user.username }}</h3>
+        <div class="level-badge mb-2"><i class="fas fa-star"></i> Nivel {{ user.level }}</div>
+        {% if streak > 0 %}
+        <div class="mt-2">
+            <span class="streak-badge"><i class="fas fa-fire"></i> Racha: {{ streak }} dias</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-primary);">
+            <div class="stat-icon"><i class="fas fa-star"></i></div>
+            <div class="stat-value">{{ user.level }}</div>
+            <div class="stat-label">Nivel</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-success);">
+            <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+            <div class="stat-value">{{ "%.0f"|format(total_exp) }}</div>
+            <div class="stat-label">EXP Total</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-warning);">
+            <div class="stat-icon"><i class="fas fa-dumbbell"></i></div>
+            <div class="stat-value">{{ total_activities }}</div>
+            <div class="stat-label">Actividades</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-info);">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-value">{{ total_minutes }}</div>
+            <div class="stat-label">Minutos</div>
+        </div>
+    </div>
+</div>
+
+<!-- Weight Chart -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-weight"></i> Historial de Peso</h5>
+    </div>
+    <div class="card-body">
+        {% if user.weight %}
+        <div class="text-center mb-3">
+            <span class="fs-4 fw-bold">{{ "%.1f"|format(user.weight) }} kg</span>
+            <span class="text-muted ms-2">peso actual</span>
+        </div>
+        {% endif %}
+        <canvas id="weightChart"></canvas>
+        {% if not weight_dates or weight_dates == '[]' %}
+        <p class="text-center text-muted mt-3">No hay datos de peso registrados aun.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- All Achievements -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-trophy"></i> Todos los Logros</h5>
+        <span class="badge bg-info">{{ achievements|selectattr('unlocked')|list|length }}/{{ achievements|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for a in achievements %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="achievement-card {{ 'unlocked' if a.unlocked else 'locked' }}">
+                    <div class="achievement-icon"><i class="fas {{ a.icon }}"></i></div>
+                    <div class="fw-bold" style="font-size: 0.9rem;">{{ a.name }}</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ a.desc }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const weightDates = {{ weight_dates|safe }};
+    const weightValues = {{ weight_values|safe }};
+    if (weightDates.length > 0) {
+        new Chart(document.getElementById('weightChart'), {
+            type: 'line',
+            data: {
+                labels: weightDates,
+                datasets: [{
+                    label: 'Peso (kg)',
+                    data: weightValues,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } },
+                    y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

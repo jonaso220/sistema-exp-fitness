@@ -1,111 +1,242 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-    .level-badge {
-        font-size: 2rem;
-        color: #ffc107;
-    }
-    .streak-badge {
-        color: #dc3545;
-        font-size: 1.2rem;
-    }
-    .progress {
-        height: 25px;
-    }
-    .progress-bar {
-        font-size: 1rem;
-        line-height: 25px;
-    }
-</style>
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-primary);">
+            <div class="stat-icon"><i class="fas fa-star"></i></div>
+            <div class="stat-value">{{ user.level }}</div>
+            <div class="stat-label">Nivel</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-warning);">
+            <div class="stat-icon"><i class="fas fa-fire"></i></div>
+            <div class="stat-value">{{ streak }}</div>
+            <div class="stat-label">Racha (dias)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-success);">
+            <div class="stat-icon"><i class="fas fa-dumbbell"></i></div>
+            <div class="stat-value">{{ total_activities }}</div>
+            <div class="stat-label">Actividades</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="background: var(--gradient-info);">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-value">{{ total_minutes }}</div>
+            <div class="stat-label">Minutos</div>
+        </div>
+    </div>
+</div>
 
-<div class="row g-4">
-    <div class="col-12 col-md-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h3 class="mb-3">Nivel {{ user.level }}</h3>
-                <div class="level-badge mb-3">
-                    <i class="fas fa-star"></i> {{ user.level }}
-                </div>
-                <div class="progress mb-3">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                         role="progressbar" 
-                         style="width: 0"
-                         data-progress="{{ progress }}"
-                         aria-valuenow="{{ progress }}"
-                         aria-valuemin="0"
-                         aria-valuemax="100">
-                        {{ "%.1f"|format(user.exp) }}/{{ exp_for_next }} EXP
-                    </div>
-                </div>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const progressBar = document.querySelector('.progress-bar');
-                        const progress = progressBar.dataset.progress;
-                        progressBar.style.width = progress + '%';
-                    });
-                </script>
-                {% if streak > 0 %}
-                <div class="streak-badge">
-                    <i class="fas fa-fire"></i> Racha: {{ streak }} días
-                </div>
-                {% endif %}
+<!-- EXP Progress -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="level-badge"><i class="fas fa-star"></i> Nivel {{ user.level }}</span>
+            <span class="text-muted">{{ "%.1f"|format(user.exp) }} / {{ exp_for_next }} EXP</span>
+        </div>
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 role="progressbar"
+                 style="width: 0; background: var(--gradient-primary);"
+                 data-progress="{{ progress }}"
+                 aria-valuenow="{{ progress }}"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                {{ "%.1f"|format(progress) }}%
             </div>
         </div>
     </div>
-    
-    <div class="col-12 col-md-8">
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-8">
         <div class="card h-100">
             <div class="card-header">
-                <h4 class="mb-0">Últimas Actividades</h4>
+                <h5 class="mb-0"><i class="fas fa-weight"></i> Historial de Peso</h5>
             </div>
             <div class="card-body">
-                {% if activities %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Ejercicio</th>
-                                <th>Duración</th>
-                                <th>Intensidad</th>
-                                <th>EXP</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for activity in activities %}
-                            <tr>
-                                <td>{{ activity.date.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ activity.exercise_type }}</td>
-                                <td>{{ activity.duration }} min</td>
-                                <td>
-                                    {% if activity.intensity == 'low' %}
-                                    <span class="badge bg-success">Baja</span>
-                                    {% elif activity.intensity == 'medium' %}
-                                    <span class="badge bg-warning">Media</span>
-                                    {% else %}
-                                    <span class="badge bg-danger">Alta</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ "%.1f"|format(activity.exp_gained) }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-center">No hay actividades registradas aún.</p>
+                <canvas id="weightChart"></canvas>
+                {% if not weight_dates or weight_dates == '[]' %}
+                <p class="text-center text-muted mt-3">No hay datos de peso registrados aun.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Tipos de Ejercicio</h5>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="typeChart"></canvas>
+                {% if not type_labels or type_labels == '[]' %}
+                <p class="text-center text-muted">No hay actividades registradas aun.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-12 text-center">
-        <a href="{{ url_for('add_activity') }}" class="btn btn-primary btn-lg">
-            <i class="fas fa-plus"></i> Registrar Nueva Actividad
-        </a>
+<!-- Achievements -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-trophy"></i> Logros</h5>
+        <span class="badge bg-info">{{ unlocked_count }}/{{ achievements|length }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for a in achievements %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="achievement-card {{ 'unlocked' if a.unlocked else 'locked' }}">
+                    <div class="achievement-icon"><i class="fas {{ a.icon }}"></i></div>
+                    <div class="fw-bold" style="font-size: 0.85rem;">{{ a.name }}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">{{ a.desc }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
+
+<!-- Recent Activities -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Actividades Recientes</h5>
+        <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-light">Ver todo</a>
+    </div>
+    <div class="card-body">
+        {% if activities %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Ejercicio</th>
+                        <th>Duracion</th>
+                        <th>Intensidad</th>
+                        <th>EXP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in activities %}
+                    <tr>
+                        <td>
+                            {% if activity.date.strftime is defined %}
+                                {{ activity.date.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                {{ activity.date }}
+                            {% endif %}
+                        </td>
+                        <td>{{ activity.exercise_type }}</td>
+                        <td>{{ activity.duration }} min</td>
+                        <td>
+                            {% if activity.intensity == 'low' %}
+                            <span class="badge bg-success">Baja</span>
+                            {% elif activity.intensity == 'medium' %}
+                            <span class="badge bg-warning">Media</span>
+                            {% else %}
+                            <span class="badge bg-danger">Alta</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="text-success">+{{ "%.1f"|format(activity.exp_gained) }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-running fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay actividades registradas aun.</p>
+            <a href="{{ url_for('add_activity') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Registrar Primera Actividad
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Floating Action Button -->
+<div class="position-fixed bottom-0 end-0 p-4" style="z-index: 1000;">
+    <a href="{{ url_for('add_activity') }}" class="btn btn-primary btn-lg rounded-circle shadow-lg" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+        <i class="fas fa-plus fa-lg"></i>
+    </a>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bar
+    const progressBar = document.querySelector('.progress-bar');
+    if (progressBar) {
+        const progress = progressBar.dataset.progress;
+        setTimeout(() => { progressBar.style.width = progress + '%'; }, 100);
+    }
+
+    // Weight Chart
+    const weightDates = {{ weight_dates|safe }};
+    const weightValues = {{ weight_values|safe }};
+    if (weightDates.length > 0) {
+        new Chart(document.getElementById('weightChart'), {
+            type: 'line',
+            data: {
+                labels: weightDates,
+                datasets: [{
+                    label: 'Peso (kg)',
+                    data: weightValues,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } },
+                    y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                }
+            }
+        });
+    }
+
+    // Activity Type Chart
+    const typeLabels = {{ type_labels|safe }};
+    const typeData = {{ type_data|safe }};
+    if (typeLabels.length > 0) {
+        new Chart(document.getElementById('typeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeData,
+                    backgroundColor: [
+                        '#6366f1', '#10b981', '#f59e0b', '#ef4444',
+                        '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#8b949e', padding: 12 }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

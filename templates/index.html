@@ -3,29 +3,35 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 text-center">
-        <h1 class="display-4 mb-4">¡Bienvenido a Sistema EXP Fitness!</h1>
-        <p class="lead">
+        <h1 class="display-4 mb-4">Sistema EXP Fitness</h1>
+        <p class="lead text-muted">
             Gamifica tu entrenamiento y mantente motivado con nuestro sistema de niveles y experiencia.
         </p>
-        
+
         <div class="card mt-4">
-            <div class="card-body text-center">
-                <h3>¿Cómo funciona?</h3>
-                <div class="row mt-4 justify-content-center">
-                    <div class="col-md-4 feature-item">
-                        <i class="fas fa-dumbbell fa-3x mb-3 text-primary"></i>
-                        <h5>Registra tus Actividades</h5>
-                        <p>Cada ejercicio te otorga EXP según su intensidad y duración</p>
+            <div class="card-body text-center py-4">
+                <h3 class="mb-4">Como funciona?</h3>
+                <div class="row mt-4 justify-content-center g-4">
+                    <div class="col-md-4">
+                        <div style="background: var(--gradient-primary); width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i class="fas fa-dumbbell fa-2x text-white"></i>
+                        </div>
+                        <h5>Registra Actividades</h5>
+                        <p class="text-muted">Cada ejercicio te otorga EXP segun su intensidad y duracion</p>
                     </div>
-                    <div class="col-md-4 feature-item">
-                        <i class="fas fa-level-up-alt fa-3x mb-3 text-success"></i>
+                    <div class="col-md-4">
+                        <div style="background: var(--gradient-success); width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i class="fas fa-level-up-alt fa-2x text-white"></i>
+                        </div>
                         <h5>Sube de Nivel</h5>
-                        <p>Acumula EXP para subir de nivel y desbloquear logros</p>
+                        <p class="text-muted">Acumula EXP para subir de nivel y desbloquear logros</p>
                     </div>
-                    <div class="col-md-4 feature-item">
-                        <i class="fas fa-chart-line fa-3x mb-3 text-info"></i>
-                        <h5>Mantén el Progreso</h5>
-                        <p>Mantén tu racha diaria y evita perder EXP por inactividad</p>
+                    <div class="col-md-4">
+                        <div style="background: var(--gradient-warning); width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i class="fas fa-chart-line fa-2x text-white"></i>
+                        </div>
+                        <h5>Manten el Progreso</h5>
+                        <p class="text-muted">Manten tu racha diaria y evita perder EXP por inactividad</p>
                     </div>
                 </div>
             </div>
@@ -35,8 +41,8 @@
             <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-3">
                 <i class="fas fa-user-plus"></i> Registrarse
             </a>
-            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Iniciar Sesion
             </a>
         </div>
     </div>
