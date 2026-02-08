@@ -1,25 +1,11 @@
 [build]
-  command = "mkdir -p dist/static && cp -r static/* dist/static/ && cp requirements.txt netlify/functions/"
+  command = "mkdir -p dist/static && cp -r static/* dist/static/ && cp requirements.txt netlify/functions/ && cp app.py netlify/functions/ && cp -r templates netlify/functions/"
   publish = "dist"
   functions = "netlify/functions"
 
 [build.environment]
   PYTHON_VERSION = "3.11"
 
-[functions]
-  included_files = [
-    "app.py",
-    "templates/**"
-  ]
-
-# Las variables de entorno se configuran en el dashboard de Netlify:
-# - SECRET_KEY
-# - FIREBASE_CREDENTIALS (JSON del service account de Firebase)
-# - GOOGLE_CLIENT_ID
-# - GOOGLE_CLIENT_SECRET
-
-# Servir archivos estaticos directamente desde CDN de Netlify.
-# Todo lo demas se enruta a la funcion serverless de Flask.
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/api/:splat"
