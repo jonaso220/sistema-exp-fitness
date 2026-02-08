@@ -110,7 +110,6 @@ def calculate_streak(user_id):
     docs = (
         db.collection('activities')
         .where('user_id', '==', user_id)
-        .order_by('date', direction=firestore.Query.DESCENDING)
         .get()
     )
     activity_dates = set()
@@ -160,14 +159,14 @@ def apply_inactivity_penalty(user):
     docs = (
         db.collection('activities')
         .where('user_id', '==', user.id)
-        .order_by('date', direction=firestore.Query.DESCENDING)
-        .limit(1)
         .get()
     )
     last_date = None
     for doc in docs:
         d = doc.to_dict()['date']
-        last_date = d.date() if hasattr(d, 'date') else d
+        d = d.date() if hasattr(d, 'date') else d
+        if last_date is None or d > last_date:
+            last_date = d
 
     if not last_date:
         user.update_fields(last_penalty_date=today_str)
@@ -192,7 +191,6 @@ def get_all_activities(user_id):
     docs = (
         db.collection('activities')
         .where('user_id', '==', user_id)
-        .order_by('date', direction=firestore.Query.DESCENDING)
         .get()
     )
     activities = []
@@ -200,6 +198,7 @@ def get_all_activities(user_id):
         a = doc.to_dict()
         a['id'] = doc.id
         activities.append(a)
+    activities.sort(key=lambda x: x.get('date', datetime.min), reverse=True)
     return activities
 
 
