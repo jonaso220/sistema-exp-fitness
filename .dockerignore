@@ -3,7 +3,6 @@ __pycache__
 .env
 .git
 .gitignore
-serviceAccountKey.json
 firebase-credentials.json
 *.md
 Procfile

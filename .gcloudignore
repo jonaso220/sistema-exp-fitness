@@ -1,0 +1,10 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+*.md
+Procfile
+render.yaml
+node_modules/
