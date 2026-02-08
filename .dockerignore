@@ -1,0 +1,9 @@
+__pycache__
+*.pyc
+.env
+.git
+.gitignore
+serviceAccountKey.json
+firebase-credentials.json
+*.md
+Procfile
