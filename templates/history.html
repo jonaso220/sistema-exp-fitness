@@ -19,7 +19,7 @@
                         <th>Intensidad</th>
                         <th>Peso</th>
                         <th>EXP</th>
-                        <th>Evidencia</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,17 +52,18 @@
                         </td>
                         <td><span class="text-success">+{{ "%.1f"|format(activity.exp_gained) }}</span></td>
                         <td>
-                            {% if activity.has_evidence %}
-                                {% if activity.evidence_url %}
-                                <a href="{{ activity.evidence_url }}" target="_blank" class="text-info">
-                                    <i class="fas fa-external-link-alt"></i>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('edit_activity', activity_id=activity.id) }}" class="btn btn-outline-light" title="Editar">
+                                    <i class="fas fa-edit"></i>
                                 </a>
-                                {% else %}
-                                <i class="fas fa-check text-success"></i>
-                                {% endif %}
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
+                                <form method="POST" action="{{ url_for('delete_activity', activity_id=activity.id) }}" style="display:inline"
+                                      onsubmit="return confirm('Eliminar esta actividad? Se restara la EXP ganada.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -72,7 +73,6 @@
     </div>
 </div>
 
-<!-- Pagination -->
 {% if total_pages > 1 %}
 <nav aria-label="Paginacion">
     <ul class="pagination justify-content-center">

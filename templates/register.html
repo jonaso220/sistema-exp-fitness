@@ -9,8 +9,9 @@
             </div>
             <div class="card-body">
                 <form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Usuario</label>
+                        <label for="username" class="form-label">Usuario (3-30 caracteres)</label>
                         <input type="text" class="form-control form-control-lg" id="username" name="username" required>
                         <div class="invalid-feedback">
                             Por favor elige un nombre de usuario.
@@ -18,7 +19,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                        <input type="password" class="form-control form-control-lg" id="password" name="password" required minlength="6">
                         <div class="invalid-feedback">
                             Por favor ingresa una contraseña.
                         </div>
@@ -26,7 +27,7 @@
                     <div class="mb-3">
                         <label for="weight" class="form-label">Peso Inicial (kg)</label>
                         <input type="number" class="form-control form-control-lg" id="weight" name="weight"
-                               step="0.1" required placeholder="Ej: 70.5">
+                               step="0.1" required min="10" max="500" placeholder="Ej: 70.5">
                         <div class="invalid-feedback">
                             Por favor ingresa tu peso inicial.
                         </div>
