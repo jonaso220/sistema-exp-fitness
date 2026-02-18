@@ -15,7 +15,7 @@
                         <label for="weight" class="form-label">Peso Inicial (kg)</label>
                         <input type="number" class="form-control form-control-lg"
                                id="weight" name="weight" step="0.1" required
-                               placeholder="Ej: 70.5">
+                               min="10" max="500" placeholder="Ej: 70.5">
                         <div class="invalid-feedback">
                             Por favor ingresa tu peso inicial.
                         </div>
@@ -30,21 +30,4 @@
         </div>
     </div>
 </div>
-
-<script>
-(function () {
-    'use strict'
-    var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms)
-        .forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
-        })
-})()
-</script>
 {% endblock %}

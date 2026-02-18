@@ -5,12 +5,15 @@ from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+from collections import defaultdict
 import firebase_admin
 from firebase_admin import credentials, firestore, auth as firebase_auth
 import json
 import logging
 import math
 import os
+import re
+import time
 
 load_dotenv()
 
@@ -22,10 +25,42 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+
+secret_key = os.getenv('SECRET_KEY')
+if not secret_key:
+    logger.warning('SECRET_KEY not set! Using random key. Sessions will not persist across restarts.')
+    secret_key = os.urandom(32).hex()
+app.config['SECRET_KEY'] = secret_key
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 
 # CSRF protection
 csrf = CSRFProtect(app)
+
+
+# --- Security headers ---
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if os.getenv('FLASK_ENV') == 'production':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+
+# --- Rate limiting ---
+_rate_limit_store = defaultdict(list)
+
+
+def _is_rate_limited(key, max_attempts=5, window_seconds=60):
+    """Check if a key has exceeded rate limits."""
+    now = time.time()
+    _rate_limit_store[key] = [t for t in _rate_limit_store[key] if now - t < window_seconds]
+    if len(_rate_limit_store[key]) >= max_attempts:
+        return True
+    _rate_limit_store[key].append(now)
+    return False
 
 # Firebase initialization
 try:
@@ -151,10 +186,14 @@ def validate_url(url):
     """Validate that a URL is safe (http/https only)."""
     if not url:
         return ''
+    url = url.strip()
+    if len(url) > 2048:
+        return ''
     try:
         parsed = urlparse(url)
         if parsed.scheme in ('http', 'https') and parsed.netloc:
-            return url
+            if re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', parsed.netloc):
+                return url
     except Exception:
         pass
     return ''
@@ -370,10 +409,10 @@ def dashboard():
         unlocked_count=unlocked_count,
         total_activities=total_activities,
         total_minutes=total_minutes,
-        weight_dates=json.dumps(weight_dates[-20:]),
-        weight_values=json.dumps(weight_values[-20:]),
-        type_labels=json.dumps(list(type_counts.keys())),
-        type_data=json.dumps(list(type_counts.values())),
+        weight_dates=weight_dates[-20:],
+        weight_values=weight_values[-20:],
+        type_labels=list(type_counts.keys()),
+        type_data=list(type_counts.values()),
     )
 
 
@@ -452,6 +491,8 @@ def add_activity():
             )
         except Exception as e:
             logger.error(f'Error updating user after activity: {e}')
+            flash('Actividad guardada pero hubo un error al actualizar tu perfil. Contacta soporte.', 'warning')
+            return redirect(url_for('dashboard'))
 
         flash(f'Actividad registrada: +{exp_gained:.1f} EXP', 'success')
         return redirect(url_for('dashboard'))
@@ -547,8 +588,13 @@ def delete_activity(activity_id):
         exp_lost = activity.get('exp_gained', 0)
         db.collection('activities').document(activity_id).delete()
 
-        current_user.exp = max(0, current_user.exp - exp_lost)
-        current_user.update_fields(exp=current_user.exp)
+        try:
+            current_user.exp = max(0, current_user.exp - exp_lost)
+            current_user.update_fields(exp=current_user.exp)
+        except Exception as update_err:
+            logger.error(f'Activity {activity_id} deleted but user EXP update failed: {update_err}')
+            flash('Actividad eliminada pero hubo un error al actualizar tu EXP. Contacta soporte.', 'warning')
+            return redirect(url_for('history'))
 
         flash(f'Actividad eliminada. -{exp_lost:.1f} EXP', 'info')
     except Exception as e:
@@ -585,8 +631,8 @@ def profile():
         total_minutes=total_minutes,
         streak=streak,
         achievements=achievements,
-        weight_dates=json.dumps(weight_dates[-30:]),
-        weight_values=json.dumps(weight_values[-30:]),
+        weight_dates=weight_dates[-30:],
+        weight_values=weight_values[-30:],
     )
 
 
@@ -614,16 +660,20 @@ def history():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        if _is_rate_limited(f'register:{request.remote_addr}', max_attempts=5, window_seconds=300):
+            flash('Demasiados intentos de registro. Espera unos minutos.', 'danger')
+            return redirect(url_for('register'))
+
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         weight_raw = request.form.get('weight')
 
-        if not username or len(username) < 3 or len(username) > 30:
-            flash('El nombre de usuario debe tener entre 3 y 30 caracteres.', 'danger')
+        if not username or not re.match(r'^[a-zA-Z0-9_-]{3,30}$', username):
+            flash('El nombre de usuario debe tener entre 3 y 30 caracteres (solo letras, numeros, _ y -).', 'danger')
             return redirect(url_for('register'))
 
-        if not password or len(password) < 6:
-            flash('La contrasena debe tener al menos 6 caracteres.', 'danger')
+        if not password or len(password) < 8:
+            flash('La contrasena debe tener al menos 8 caracteres.', 'danger')
             return redirect(url_for('register'))
 
         weight = validate_positive_float(weight_raw, 'weight', 10, 500)
@@ -658,6 +708,10 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        if _is_rate_limited(f'login:{request.remote_addr}', max_attempts=5, window_seconds=60):
+            flash('Demasiados intentos de inicio de sesion. Espera un minuto.', 'danger')
+            return redirect(url_for('login'))
+
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
 
@@ -667,6 +721,7 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
+            logger.warning(f'Failed login attempt for username: {username} from IP: {request.remote_addr}')
             flash('Usuario o contrasena incorrectos.', 'danger')
 
     return render_template('login.html')
@@ -680,7 +735,6 @@ def logout():
 
 
 @app.route('/auth/google', methods=['POST'])
-@csrf.exempt
 def auth_google():
     id_token = request.form.get('id_token')
     if not id_token:
@@ -751,14 +805,13 @@ def complete_profile():
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template('index.html'), 404
+    return render_template('404.html'), 404
 
 
 @app.errorhandler(500)
 def server_error(e):
     logger.error(f'Server error: {e}')
-    flash('Error interno del servidor. Intenta de nuevo.', 'danger')
-    return redirect(url_for('index'))
+    return render_template('500.html'), 500
 
 
 @login_manager.user_loader
@@ -767,4 +820,4 @@ def load_user(user_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.getenv('FLASK_ENV') == 'development')

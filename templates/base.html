@@ -6,6 +6,7 @@
     <title>Sistema EXP Fitness</title>
     <meta name="description" content="Gamifica tu entrenamiento con Sistema EXP Fitness">
     <meta name="theme-color" content="#0d1117">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
@@ -222,6 +223,27 @@
             messagingSenderId: "193525381152",
             appId: "1:193525381152:web:13a846d2c6dd3722506445"
         });
+    </script>
+    <script>
+        // Bootstrap form validation + double-submit prevention
+        (function () {
+            'use strict';
+            Array.from(document.querySelectorAll('.needs-validation')).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    } else {
+                        var btn = form.querySelector('button[type="submit"]');
+                        if (btn && !btn.disabled) {
+                            btn.disabled = true;
+                            btn.insertAdjacentHTML('afterbegin', '<span class="spinner-border spinner-border-sm me-1"></span>');
+                        }
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
     </script>
 </body>
 </html>
