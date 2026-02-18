@@ -63,7 +63,7 @@
             </div>
             <div class="card-body">
                 <canvas id="weightChart"></canvas>
-                {% if not weight_dates or weight_dates == '[]' %}
+                {% if not weight_dates %}
                 <p class="text-center text-muted mt-3">No hay datos de peso registrados aun.</p>
                 {% endif %}
             </div>
@@ -76,7 +76,7 @@
             </div>
             <div class="card-body d-flex align-items-center justify-content-center">
                 <canvas id="typeChart"></canvas>
-                {% if not type_labels or type_labels == '[]' %}
+                {% if not type_labels %}
                 <p class="text-center text-muted">No hay actividades registradas aun.</p>
                 {% endif %}
             </div>
@@ -128,10 +128,12 @@
                     {% for activity in activities %}
                     <tr>
                         <td>
-                            {% if activity.date.strftime is defined %}
-                                {{ activity.date.strftime('%d/%m/%Y') }}
-                            {% else %}
+                            {% if activity.date and activity.date.strftime is defined %}
+                                {{ activity.date.strftime('%d/%m/%Y %H:%M') }}
+                            {% elif activity.date %}
                                 {{ activity.date }}
+                            {% else %}
+                                -
                             {% endif %}
                         </td>
                         <td>{{ activity.exercise_type }}</td>
@@ -180,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Weight Chart
-    const weightDates = {{ weight_dates|safe }};
-    const weightValues = {{ weight_values|safe }};
+    const weightDates = {{ weight_dates|tojson }};
+    const weightValues = {{ weight_values|tojson }};
     if (weightDates.length > 0) {
         new Chart(document.getElementById('weightChart'), {
             type: 'line',
@@ -210,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Activity Type Chart
-    const typeLabels = {{ type_labels|safe }};
-    const typeData = {{ type_data|safe }};
+    const typeLabels = {{ type_labels|tojson }};
+    const typeData = {{ type_data|tojson }};
     if (typeLabels.length > 0) {
         new Chart(document.getElementById('typeChart'), {
             type: 'doughnut',

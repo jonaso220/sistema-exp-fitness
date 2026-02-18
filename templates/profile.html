@@ -64,7 +64,7 @@
         </div>
         {% endif %}
         <canvas id="weightChart"></canvas>
-        {% if not weight_dates or weight_dates == '[]' %}
+        {% if not weight_dates %}
         <p class="text-center text-muted mt-3">No hay datos de peso registrados aun.</p>
         {% endif %}
     </div>
@@ -93,8 +93,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const weightDates = {{ weight_dates|safe }};
-    const weightValues = {{ weight_values|safe }};
+    const weightDates = {{ weight_dates|tojson }};
+    const weightValues = {{ weight_values|tojson }};
     if (weightDates.length > 0) {
         new Chart(document.getElementById('weightChart'), {
             type: 'line',

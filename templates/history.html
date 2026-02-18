@@ -26,10 +26,12 @@
                     {% for activity in activities %}
                     <tr>
                         <td>
-                            {% if activity.date.strftime is defined %}
+                            {% if activity.date and activity.date.strftime is defined %}
                                 {{ activity.date.strftime('%d/%m/%Y %H:%M') }}
-                            {% else %}
+                            {% elif activity.date %}
                                 {{ activity.date }}
+                            {% else %}
+                                -
                             {% endif %}
                         </td>
                         <td>{{ activity.exercise_type }}</td>

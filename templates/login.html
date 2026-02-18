@@ -46,39 +46,31 @@ function signInWithGoogle() {
     var provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider)
         .then(function(result) {
+            if (!result.user) throw new Error('No se obtuvo usuario de Google');
             return result.user.getIdToken();
         })
         .then(function(idToken) {
             var form = document.createElement('form');
             form.method = 'POST';
             form.action = '/auth/google';
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'id_token';
-            input.value = idToken;
-            form.appendChild(input);
+            var tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'id_token';
+            tokenInput.value = idToken;
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+            form.appendChild(tokenInput);
+            form.appendChild(csrfInput);
             document.body.appendChild(form);
             form.submit();
+            form.remove();
         })
         .catch(function(error) {
             console.error('Error:', error);
-            alert('Error al iniciar sesión con Google: ' + error.message);
+            alert('Error al iniciar sesion con Google: ' + (error.message || 'Error desconocido'));
         });
 }
-
-(function () {
-    'use strict'
-    var forms = document.querySelectorAll('.needs-validation')
-    Array.prototype.slice.call(forms)
-        .forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                }
-                form.classList.add('was-validated')
-            }, false)
-        })
-})()
 </script>
 {% endblock %}
