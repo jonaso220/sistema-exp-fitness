@@ -1,22 +1,25 @@
 {
-    "name": "Sistema EXP Fitness",
-    "short_name": "EXP Fitness",
-    "description": "Gamifica tu entrenamiento con sistema de niveles y experiencia",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#0d1117",
-    "theme_color": "#0d1117",
-    "orientation": "portrait",
-    "icons": [
-        {
-            "src": "/static/logo.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/static/logo.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "Sistema EXP Fitness",
+  "short_name": "EXP Fitness",
+  "description": "Gamifica tu entrenamiento con sistema de niveles y experiencia / Gamify your workout with a leveling and experience system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["fitness", "health", "games"]
 }

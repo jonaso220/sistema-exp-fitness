@@ -5,56 +5,65 @@
     <div class="col-12 col-md-6 col-lg-4">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0">Registro</h4>
+                <h4 class="mb-0">{{ t('auth.register') }}</h4>
             </div>
             <div class="card-body">
                 <form method="POST" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Usuario (3-30 caracteres)</label>
-                        <input type="text" class="form-control form-control-lg" id="username" name="username" required>
+                        <label for="username" class="form-label">{{ t('auth.username_rules') }}</label>
+                        <input type="text" class="form-control form-control-lg" id="username" name="username"
+                               required pattern="[a-zA-Z0-9_\-]{3,30}">
                         <div class="invalid-feedback">
-                            Por favor elige un nombre de usuario.
+                            {{ t('auth.username_rules') }}
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control form-control-lg" id="password" name="password" required minlength="8">
+                        <label for="password" class="form-label">{{ t('auth.password') }}</label>
+                        <input type="password" class="form-control form-control-lg" id="password" name="password"
+                               required minlength="8">
                         <div class="invalid-feedback">
-                            Por favor ingresa una contraseña.
+                            {{ t('auth.password_min') }}
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="weight" class="form-label">Peso Inicial (kg)</label>
+                        <label for="email" class="form-label">{{ t('auth.email') }}</label>
+                        <input type="email" class="form-control form-control-lg" id="email" name="email"
+                               placeholder="{{ t('auth.email_placeholder') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="weight" class="form-label">{{ t('auth.weight_initial') }}</label>
                         <input type="number" class="form-control form-control-lg" id="weight" name="weight"
                                step="0.1" required min="10" max="500" placeholder="Ej: 70.5">
                         <div class="invalid-feedback">
-                            Por favor ingresa tu peso inicial.
+                            {{ t('auth.weight_initial') }}
                         </div>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-user-plus"></i> Registrarse
+                            <i class="fas fa-user-plus"></i> {{ t('auth.register_btn') }}
                         </button>
                         <button type="button" onclick="signInWithGoogle()" class="btn btn-danger btn-lg">
-                            <i class="fab fa-google"></i> Registrarse con Google
+                            <i class="fab fa-google"></i> {{ t('auth.google_register') }}
                         </button>
                     </div>
                 </form>
                 <div class="text-center mt-3">
-                    <p>¿Ya tienes una cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></p>
+                    <p>{{ t('auth.has_account') }} <a href="{{ url_for('login') }}">{{ t('auth.login_here') }}</a></p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 function signInWithGoogle() {
     var provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider)
         .then(function(result) {
-            if (!result.user) throw new Error('No se obtuvo usuario de Google');
+            if (!result.user) throw new Error('No user from Google');
             return result.user.getIdToken();
         })
         .then(function(idToken) {
@@ -77,7 +86,7 @@ function signInWithGoogle() {
         })
         .catch(function(error) {
             console.error('Error:', error);
-            alert('Error al registrarse con Google: ' + (error.message || 'Error desconocido'));
+            alert('Error: ' + (error.message || 'Unknown error'));
         });
 }
 </script>

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 class="display-4"><i class="fas fa-shield-alt"></i> {{ t('class.title') }}</h2>
+    <p class="text-muted lead">{{ t('class.subtitle') }}</p>
+</div>
+
+{% if user.level < 5 %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card text-center">
+            <div class="card-body py-5">
+                <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                <h5>{{ t('class.locked') }}</h5>
+                <p class="text-muted">
+                    {% if current_lang == 'en' %}
+                    You are currently level {{ user.level }}. Reach level 5 to unlock class selection.
+                    {% else %}
+                    Actualmente estas en el nivel {{ user.level }}. Alcanza el nivel 5 para desbloquear la seleccion de clase.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> {{ t('act.back_dashboard') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row g-4">
+    {% for class_key, cls in classes.items() %}
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="class-card card {{ 'selected' if user.player_class == class_key }}">
+            <!-- Icon -->
+            <div class="mb-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                     style="width: 80px; height: 80px; background: {{ cls.gradient }};">
+                    <i class="fas {{ cls.icon }} fa-2x text-white"></i>
+                </div>
+            </div>
+
+            <!-- Class Name -->
+            <h4 class="fw-bold">
+                {% if current_lang == 'en' %}{{ cls.name_en }}{% else %}{{ cls.name_es }}{% endif %}
+            </h4>
+
+            <!-- Description -->
+            <p class="text-muted small">
+                {% if current_lang == 'en' %}{{ cls.desc_en }}{% else %}{{ cls.desc_es }}{% endif %}
+            </p>
+
+            <!-- Specialty Exercises -->
+            <div class="mb-3">
+                <span class="small text-muted d-block mb-1">{{ t('class.specialty') }}:</span>
+                {% for spec in cls.specialty %}
+                <span class="badge bg-secondary me-1 mb-1">{{ spec }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Bonus Badge -->
+            <div class="mb-3">
+                <span class="badge" style="background: var(--gradient-warning); color: #000; font-size: 0.85rem;">
+                    <i class="fas fa-bolt"></i> +30% {{ t('class.bonus') }}
+                </span>
+            </div>
+
+            <!-- Select / Current Badge -->
+            {% if user.player_class == class_key %}
+            <div>
+                <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">
+                    <i class="fas fa-check-circle"></i> {{ t('class.selected') }}
+                </span>
+            </div>
+            {% else %}
+            <form method="POST" class="needs-validation" novalidate onsubmit="return confirm('{{ t('class.confirm') }}');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="player_class" value="{{ class_key }}">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-check"></i> {{ t('class.select') }}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('act.back_dashboard') }}
+    </a>
+</div>
+{% endif %}
+{% endblock %}

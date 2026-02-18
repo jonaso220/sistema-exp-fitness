@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="display-4"><i class="fas fa-chart-bar"></i> {{ t('stats.title') }}</h2>
+</div>
+
+<!-- Weekly EXP Chart & Intensity Distribution -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> {{ t('stats.exp_weekly') }}</h5>
+            </div>
+            <div class="card-body">
+                {% if weekly_exp %}
+                <canvas id="weeklyExpChart"></canvas>
+                {% else %}
+                <p class="text-muted text-center py-4">{{ t('stats.no_data') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> {{ t('stats.intensity_dist') }}</h5>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                {% if intensity_dist and (intensity_dist.low or intensity_dist.medium or intensity_dist.high) %}
+                <canvas id="intensityChart"></canvas>
+                {% else %}
+                <p class="text-muted text-center py-4">{{ t('stats.no_data') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Heatmap -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> {{ t('stats.heatmap') }}</h5>
+    </div>
+    <div class="card-body">
+        {% if heatmap %}
+        <div id="heatmap-container" style="overflow-x: auto;">
+            <div id="heatmap" style="display: inline-flex; gap: 3px; padding: 10px 0;"></div>
+        </div>
+        <div class="d-flex align-items-center justify-content-end mt-2 gap-1">
+            <span class="text-muted small me-1">{% if current_lang == 'en' %}Less{% else %}Menos{% endif %}</span>
+            <span class="heatmap-cell" style="background: {{ '#161b22' if current_theme == 'dark' else '#ebedf0' }};"></span>
+            <span class="heatmap-cell" style="background: #0e4429;"></span>
+            <span class="heatmap-cell" style="background: #006d32;"></span>
+            <span class="heatmap-cell" style="background: #26a641;"></span>
+            <span class="heatmap-cell" style="background: #39d353;"></span>
+            <span class="text-muted small ms-1">{% if current_lang == 'en' %}More{% else %}Mas{% endif %}</span>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">{{ t('stats.no_data') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Monthly Summary Table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-table"></i> {{ t('stats.monthly_summary') }}</h5>
+    </div>
+    <div class="card-body">
+        {% if monthly_summary %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ t('stats.month') }}</th>
+                        <th class="text-center">{{ t('stats.sessions') }}</th>
+                        <th class="text-center">{{ t('stats.total_minutes') }}</th>
+                        <th class="text-center">{{ t('stats.total_exp') }}</th>
+                        <th class="text-center">{{ t('stats.avg_duration') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in monthly_summary %}
+                    <tr>
+                        <td>
+                            {% if current_lang == 'en' %}{{ row.month_en }}{% else %}{{ row.month_es }}{% endif %} {{ row.year }}
+                        </td>
+                        <td class="text-center">{{ row.sessions }}</td>
+                        <td class="text-center">{{ row.total_minutes }}</td>
+                        <td class="text-center"><span class="text-success">{{ row.total_exp }}</span></td>
+                        <td class="text-center">{{ row.avg_duration }} min</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">{{ t('stats.no_data') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="text-center">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('act.back_dashboard') }}
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var isDark = '{{ current_theme }}' === 'dark';
+    var gridColor = isDark ? '#21262d' : '#dee2e6';
+    var textColor = isDark ? '#8b949e' : '#6c757d';
+
+    // Weekly EXP Bar Chart
+    var weeklyData = {{ weekly_exp|tojson }};
+    if (weeklyData && weeklyData.length > 0) {
+        var weeklyLabels = weeklyData.map(function(d) { return d.label; });
+        var weeklyValues = weeklyData.map(function(d) { return d.exp; });
+        new Chart(document.getElementById('weeklyExpChart'), {
+            type: 'bar',
+            data: {
+                labels: weeklyLabels,
+                datasets: [{
+                    label: 'EXP',
+                    data: weeklyValues,
+                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                    y: { grid: { color: gridColor }, ticks: { color: textColor }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // Intensity Distribution Doughnut Chart
+    var intensityDist = {{ intensity_dist|tojson }};
+    if (intensityDist && (intensityDist.low || intensityDist.medium || intensityDist.high)) {
+        new Chart(document.getElementById('intensityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['{{ t("general.low") }}', '{{ t("general.medium") }}', '{{ t("general.high") }}'],
+                datasets: [{
+                    data: [intensityDist.low, intensityDist.medium, intensityDist.high],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: textColor, padding: 12 }
+                    }
+                }
+            }
+        });
+    }
+
+    // Activity Heatmap (Full Year)
+    var heatmapData = {{ heatmap|tojson }};
+    var heatmapContainer = document.getElementById('heatmap');
+    if (heatmapContainer && heatmapData) {
+        var today = new Date();
+        var startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 364);
+
+        // Align to Sunday
+        var dayOfWeek = startDate.getDay();
+        startDate.setDate(startDate.getDate() - dayOfWeek);
+
+        var emptyColor = isDark ? '#161b22' : '#ebedf0';
+        var colors = ['#0e4429', '#006d32', '#26a641', '#39d353'];
+
+        var currentDate = new Date(startDate);
+        var weeks = [];
+        var currentWeek = [];
+
+        while (currentDate <= today) {
+            currentWeek.push(new Date(currentDate));
+            if (currentWeek.length === 7) {
+                weeks.push(currentWeek);
+                currentWeek = [];
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        if (currentWeek.length > 0) {
+            weeks.push(currentWeek);
+        }
+
+        weeks.forEach(function(week) {
+            var col = document.createElement('div');
+            col.style.display = 'flex';
+            col.style.flexDirection = 'column';
+            col.style.gap = '3px';
+
+            week.forEach(function(date) {
+                var key = date.toISOString().slice(0, 10);
+                var count = heatmapData[key] || 0;
+                var cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
+                if (date > today) {
+                    cell.style.background = 'transparent';
+                } else if (count === 0) {
+                    cell.style.background = emptyColor;
+                } else {
+                    var idx = Math.min(count, 4) - 1;
+                    cell.style.background = colors[idx];
+                }
+                cell.title = key + ': ' + count + (count === 1 ? ' activity' : ' activities');
+                col.appendChild(cell);
+            });
+
+            heatmapContainer.appendChild(col);
+        });
+    }
+});
+</script>
+{% endblock %}

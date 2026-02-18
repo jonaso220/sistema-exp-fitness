@@ -5,65 +5,160 @@
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0"><i class="fas fa-edit"></i> Editar Actividad</h4>
+                <h4 class="mb-0"><i class="fas fa-edit"></i> {{ t('act.edit') }}</h4>
             </div>
             <div class="card-body">
-                <form method="POST" class="needs-validation" novalidate>
+                <form method="POST" class="needs-validation" novalidate id="editActivityForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="evidence_photo" id="evidence_photo_input" value="">
+
+                    <!-- Exercise Type -->
                     <div class="mb-3">
-                        <label for="exercise_type" class="form-label">Tipo de Ejercicio</label>
+                        <label for="exercise_type" class="form-label">{{ t('act.exercise_type') }}</label>
                         <select class="form-select form-select-lg" id="exercise_type" name="exercise_type" required>
-                            {% for t in ['Cardio', 'Pesas', 'Yoga', 'Natacion', 'Ciclismo', 'Calistenia', 'HIIT', 'Otro'] %}
-                            <option value="{{ t }}" {{ 'selected' if activity.exercise_type == t }}>{{ t }}</option>
+                            <option value="">{{ t('act.select_exercise') }}</option>
+                            {% for et in exercise_types %}
+                            <option value="{{ et }}" {{ 'selected' if activity.exercise_type == et }}>{{ et }}</option>
                             {% endfor %}
                         </select>
+                        <div class="invalid-feedback">
+                            {% if current_lang == 'en' %}Please select an exercise type.{% else %}Por favor selecciona un tipo de ejercicio.{% endif %}
+                        </div>
                     </div>
 
+                    <!-- Duration -->
                     <div class="mb-3">
-                        <label for="duration" class="form-label">Duracion (minutos)</label>
+                        <label for="duration" class="form-label">{{ t('act.duration') }}</label>
                         <input type="number" class="form-control form-control-lg" id="duration" name="duration"
                                required min="1" max="1440" value="{{ activity.duration }}">
+                        <div class="invalid-feedback">
+                            {% if current_lang == 'en' %}Duration must be between 1 and 1440 minutes.{% else %}Duracion debe ser entre 1 y 1440 minutos.{% endif %}
+                        </div>
                     </div>
 
+                    <!-- Intensity -->
                     <div class="mb-3">
-                        <label for="intensity" class="form-label">Intensidad</label>
+                        <label for="intensity" class="form-label">{{ t('act.intensity') }}</label>
                         <select class="form-select form-select-lg" id="intensity" name="intensity" required>
-                            <option value="low" {{ 'selected' if activity.intensity == 'low' }}>Baja (x1 EXP)</option>
-                            <option value="medium" {{ 'selected' if activity.intensity == 'medium' }}>Media (x1.5 EXP)</option>
-                            <option value="high" {{ 'selected' if activity.intensity == 'high' }}>Alta (x2 EXP)</option>
+                            <option value="low" {{ 'selected' if activity.intensity == 'low' }}>{{ t('act.intensity_low') }}</option>
+                            <option value="medium" {{ 'selected' if activity.intensity == 'medium' }}>{{ t('act.intensity_medium') }}</option>
+                            <option value="high" {{ 'selected' if activity.intensity == 'high' }}>{{ t('act.intensity_high') }}</option>
                         </select>
                     </div>
 
+                    <!-- Current Weight -->
                     <div class="mb-3">
-                        <label for="weight" class="form-label">Peso (kg)</label>
+                        <label for="weight" class="form-label">{{ t('act.current_weight') }}</label>
                         <input type="number" class="form-control form-control-lg" id="weight" name="weight"
                                step="0.1" required min="10" max="500"
                                value="{{ activity.weight_recorded or '' }}">
+                        <div class="invalid-feedback">
+                            {% if current_lang == 'en' %}Weight must be between 10 and 500 kg.{% else %}Peso debe ser entre 10 y 500 kg.{% endif %}
+                        </div>
                     </div>
 
+                    <!-- Strength Exercise Details -->
+                    <div id="strength-details" style="display: {{ 'block' if activity.exercise_type in strength_exercises else 'none' }};">
+                        <div class="card mb-3" style="border-color: var(--card-border);">
+                            <div class="card-header py-2">
+                                <h6 class="mb-0"><i class="fas fa-dumbbell"></i> {{ t('act.details') }}</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label for="sets" class="form-label small">{{ t('act.sets') }}</label>
+                                        <input type="number" class="form-control" id="sets" name="sets" min="1" max="100"
+                                               value="{{ activity.exercise_details.sets if activity.exercise_details and activity.exercise_details.sets else '' }}"
+                                               placeholder="3">
+                                    </div>
+                                    <div class="col-4">
+                                        <label for="reps" class="form-label small">{{ t('act.reps') }}</label>
+                                        <input type="number" class="form-control" id="reps" name="reps" min="1" max="1000"
+                                               value="{{ activity.exercise_details.reps if activity.exercise_details and activity.exercise_details.reps else '' }}"
+                                               placeholder="12">
+                                    </div>
+                                    <div class="col-4">
+                                        <label for="exercise_weight" class="form-label small">{{ t('act.exercise_weight') }}</label>
+                                        <input type="number" class="form-control" id="exercise_weight" name="exercise_weight" min="0.1" max="1000" step="0.1"
+                                               value="{{ activity.exercise_details.exercise_weight if activity.exercise_details and activity.exercise_details.exercise_weight else '' }}"
+                                               placeholder="20">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Distance Exercise Details -->
+                    <div id="distance-details" style="display: {{ 'block' if activity.exercise_type in distance_exercises else 'none' }};">
+                        <div class="card mb-3" style="border-color: var(--card-border);">
+                            <div class="card-header py-2">
+                                <h6 class="mb-0"><i class="fas fa-route"></i> {{ t('act.details') }}</h6>
+                            </div>
+                            <div class="card-body">
+                                <label for="distance" class="form-label small">{{ t('act.distance') }}</label>
+                                <input type="number" class="form-control" id="distance" name="distance" min="0.1" max="1000" step="0.1"
+                                       value="{{ activity.exercise_details.distance_km if activity.exercise_details and activity.exercise_details.distance_km else '' }}"
+                                       placeholder="5.0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">{{ t('act.notes') }}</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2" maxlength="500"
+                                  placeholder="{{ t('act.notes_placeholder') }}">{{ activity.notes or '' }}</textarea>
+                        <div class="form-text text-end"><span id="notes-count">{{ (activity.notes or '')|length }}</span>/500</div>
+                    </div>
+
+                    <!-- Evidence Toggle -->
                     <div class="mb-3">
                         <div class="form-check form-switch">
                             <input type="checkbox" class="form-check-input" id="evidence" name="evidence"
                                    {{ 'checked' if activity.has_evidence }}
-                                   onchange="document.getElementById('evidence-url-group').style.display = this.checked ? 'block' : 'none'">
+                                   onchange="toggleEvidence(this.checked)">
                             <label class="form-check-label" for="evidence">
-                                Tengo evidencia (+20% EXP)
+                                {{ t('act.evidence') }}
                             </label>
                         </div>
                     </div>
 
-                    <div class="mb-4" id="evidence-url-group" style="{{ 'display:block' if activity.has_evidence else 'display:none' }}">
-                        <label for="evidence_url" class="form-label">URL de evidencia</label>
-                        <input type="url" class="form-control" id="evidence_url" name="evidence_url"
-                               value="{{ activity.evidence_url or '' }}">
+                    <!-- Evidence Fields -->
+                    <div id="evidence-section" style="{{ 'display:block' if activity.has_evidence else 'display:none' }}">
+                        <!-- Evidence URL -->
+                        <div class="mb-3">
+                            <label for="evidence_url" class="form-label">{{ t('act.evidence_url') }}</label>
+                            <input type="url" class="form-control" id="evidence_url" name="evidence_url"
+                                   value="{{ activity.evidence_url or '' }}"
+                                   placeholder="https://example.com/photo.jpg">
+                            <div class="form-text">{{ t('act.evidence_url_hint') }}</div>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div class="mb-3">
+                            <label for="photo_upload" class="form-label">{{ t('act.upload_photo') }}</label>
+                            <input type="file" class="form-control" id="photo_upload" accept="image/*">
+                            <div class="form-text">{{ t('act.upload_photo_hint') }}</div>
+                        </div>
+
+                        <!-- Photo Preview -->
+                        <div id="photo-preview-container" class="mb-3" style="{{ 'display:block' if activity.evidence_photo else 'display:none' }}">
+                            <div class="d-flex align-items-start gap-2">
+                                <img id="photo-preview" src="{{ activity.evidence_photo or '' }}" alt="Preview" class="rounded" style="max-width: 150px; max-height: 150px; object-fit: cover; border: 1px solid var(--card-border);">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePhoto()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Submit -->
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save"></i> Guardar Cambios
+                            <i class="fas fa-save"></i> {{ t('act.save_changes') }}
                         </button>
                         <a href="{{ url_for('history') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancelar
+                            <i class="fas fa-arrow-left"></i> {{ t('act.cancel') }}
                         </a>
                     </div>
                 </form>
@@ -71,4 +166,74 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var strengthExercises = {{ strength_exercises|tojson }};
+    var distanceExercises = {{ distance_exercises|tojson }};
+    var exerciseSelect = document.getElementById('exercise_type');
+    var strengthDetails = document.getElementById('strength-details');
+    var distanceDetails = document.getElementById('distance-details');
+
+    exerciseSelect.addEventListener('change', function() {
+        var val = this.value;
+        strengthDetails.style.display = strengthExercises.indexOf(val) !== -1 ? 'block' : 'none';
+        distanceDetails.style.display = distanceExercises.indexOf(val) !== -1 ? 'block' : 'none';
+    });
+
+    // Notes character counter
+    var notesField = document.getElementById('notes');
+    var notesCount = document.getElementById('notes-count');
+    notesField.addEventListener('input', function() {
+        notesCount.textContent = this.value.length;
+    });
+})();
+
+function toggleEvidence(checked) {
+    document.getElementById('evidence-section').style.display = checked ? 'block' : 'none';
+}
+
+// Photo upload and base64 conversion
+document.getElementById('photo_upload').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+        alert('{% if current_lang == "en" %}File too large. Max 2MB.{% else %}Archivo muy grande. Max 2MB.{% endif %}');
+        this.value = '';
+        return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxSize = 800;
+            var w = img.width, h = img.height;
+            if (w > maxSize || h > maxSize) {
+                if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                else { w = Math.round(w * maxSize / h); h = maxSize; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            var base64 = canvas.toDataURL('image/jpeg', 0.7);
+            document.getElementById('evidence_photo_input').value = base64;
+            document.getElementById('photo-preview').src = base64;
+            document.getElementById('photo-preview-container').style.display = 'block';
+        };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+function removePhoto() {
+    document.getElementById('evidence_photo_input').value = '';
+    document.getElementById('photo_upload').value = '';
+    document.getElementById('photo-preview').src = '';
+    document.getElementById('photo-preview-container').style.display = 'none';
+}
+</script>
 {% endblock %}
