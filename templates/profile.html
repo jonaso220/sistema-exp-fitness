@@ -5,48 +5,54 @@
 <div class="card mb-4">
     <div class="card-body text-center py-4">
         <div class="mb-3">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--gradient-primary); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
+            <div style="width: 90px; height: 90px; border-radius: 50%; background: var(--gradient-primary); display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);">
                 <i class="fas fa-user"></i>
             </div>
         </div>
-        <h3 class="mb-1">{{ user.username }}</h3>
-        <div class="level-badge mb-2"><i class="fas fa-star"></i> Nivel {{ user.level }}</div>
-        {% if streak > 0 %}
-        <div class="mt-2">
-            <span class="streak-badge"><i class="fas fa-fire"></i> Racha: {{ streak }} dias</span>
+        <h3 class="mb-2">{{ user.username }}</h3>
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-2">
+            <span class="level-badge"><i class="fas fa-star"></i> {{ t('dash.level') }} {{ user.level }}</span>
+            {% if streak > 0 %}
+            <span class="streak-badge"><i class="fas fa-fire"></i> {{ streak }} {{ t('dash.streak') }}</span>
+            {% endif %}
+            {% if user_class %}
+            <span class="badge" style="background: {{ user_class.gradient }}; color: white; padding: 6px 14px; border-radius: 10px; font-size: 0.9rem;">
+                <i class="fas {{ user_class.icon }} me-1"></i>
+                {{ user_class['name_' ~ current_lang] if user_class['name_' ~ current_lang] is defined else user_class.name_es }}
+            </span>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 
-<!-- Stats -->
+<!-- Stats Cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="stat-card" style="background: var(--gradient-primary);">
             <div class="stat-icon"><i class="fas fa-star"></i></div>
             <div class="stat-value">{{ user.level }}</div>
-            <div class="stat-label">Nivel</div>
+            <div class="stat-label">{{ t('dash.level') }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card" style="background: var(--gradient-success);">
             <div class="stat-icon"><i class="fas fa-bolt"></i></div>
             <div class="stat-value">{{ "%.0f"|format(total_exp) }}</div>
-            <div class="stat-label">EXP Total</div>
+            <div class="stat-label">{{ t('prof.total_exp') }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card" style="background: var(--gradient-warning);">
             <div class="stat-icon"><i class="fas fa-dumbbell"></i></div>
             <div class="stat-value">{{ total_activities }}</div>
-            <div class="stat-label">Actividades</div>
+            <div class="stat-label">{{ t('dash.activities') }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card" style="background: var(--gradient-info);">
             <div class="stat-icon"><i class="fas fa-clock"></i></div>
             <div class="stat-value">{{ total_minutes }}</div>
-            <div class="stat-label">Minutos</div>
+            <div class="stat-label">{{ t('dash.minutes') }}</div>
         </div>
     </div>
 </div>
@@ -54,18 +60,18 @@
 <!-- Weight Chart -->
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-weight"></i> Historial de Peso</h5>
+        <h5 class="mb-0"><i class="fas fa-weight"></i> {{ t('dash.weight_history') }}</h5>
     </div>
     <div class="card-body">
         {% if user.weight %}
         <div class="text-center mb-3">
             <span class="fs-4 fw-bold">{{ "%.1f"|format(user.weight) }} kg</span>
-            <span class="text-muted ms-2">peso actual</span>
+            <span class="text-muted ms-2">{{ t('prof.current_weight') }}</span>
         </div>
         {% endif %}
         <canvas id="weightChart"></canvas>
         {% if not weight_dates %}
-        <p class="text-center text-muted mt-3">No hay datos de peso registrados aun.</p>
+        <p class="text-center text-muted mt-3">{{ t('dash.no_weight_data') }}</p>
         {% endif %}
     </div>
 </div>
@@ -73,7 +79,7 @@
 <!-- All Achievements -->
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-trophy"></i> Todos los Logros</h5>
+        <h5 class="mb-0"><i class="fas fa-trophy"></i> {{ t('prof.all_achievements') }}</h5>
         <span class="badge bg-info">{{ achievements|selectattr('unlocked')|list|length }}/{{ achievements|length }}</span>
     </div>
     <div class="card-body">
@@ -91,17 +97,72 @@
     </div>
 </div>
 
+<!-- Player Class Info -->
+{% if user_class %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>{{ t('prof.class') }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <div class="me-3" style="width: 60px; height: 60px; border-radius: 50%; background: {{ user_class.gradient }}; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <i class="fas {{ user_class.icon }}"></i>
+            </div>
+            <div>
+                <h4 class="mb-0" style="color: {{ user_class.color }};">
+                    {{ user_class['name_' ~ current_lang] if user_class['name_' ~ current_lang] is defined else user_class.name_es }}
+                </h4>
+                <div class="text-muted" style="font-size: 0.9rem;">
+                    {{ user_class['desc_' ~ current_lang] if user_class['desc_' ~ current_lang] is defined else user_class.desc_es }}
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background: {{ '#21262d' if current_theme == 'dark' else '#f8f9fa' }};">
+                    <div class="text-muted mb-1" style="font-size: 0.85rem;">
+                        <i class="fas fa-crosshairs me-1"></i>{{ t('class.specialty') }}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for spec in user_class.specialty %}
+                        <span class="badge" style="background: {{ user_class.gradient }}; padding: 6px 12px; font-size: 0.85rem;">
+                            {{ spec }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background: {{ '#21262d' if current_theme == 'dark' else '#f8f9fa' }};">
+                    <div class="text-muted mb-1" style="font-size: 0.85rem;">
+                        <i class="fas fa-arrow-up me-1"></i>{{ t('class.bonus') }}
+                    </div>
+                    <div class="fs-4 fw-bold" style="color: {{ user_class.color }};">
+                        +{{ (user_class.bonus * 100) | int }}% EXP
+                    </div>
+                    <div class="text-muted" style="font-size: 0.8rem;">
+                        {{ t('class.specialty') }}: {{ user_class.specialty | join(', ') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const weightDates = {{ weight_dates|tojson }};
-    const weightValues = {{ weight_values|tojson }};
+    var weightDates = {{ weight_dates|tojson }};
+    var weightValues = {{ weight_values|tojson }};
     if (weightDates.length > 0) {
         new Chart(document.getElementById('weightChart'), {
             type: 'line',
             data: {
                 labels: weightDates,
                 datasets: [{
-                    label: 'Peso (kg)',
+                    label: '{{ t("hist.weight") }} (kg)',
                     data: weightValues,
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',

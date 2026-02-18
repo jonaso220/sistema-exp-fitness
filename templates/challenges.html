@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="display-4"><i class="fas fa-flag"></i> {{ t('chal.title') }}</h2>
+</div>
+
+<!-- Weekly Challenges -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-calendar-week"></i> {{ t('chal.weekly') }}</h5>
+    </div>
+    <div class="card-body">
+        {% if weekly_challenges %}
+        {% for challenge in weekly_challenges %}
+        <div class="challenge-card {{ 'completed' if challenge.completed }}">
+            <div class="d-flex align-items-start gap-3">
+                <!-- Icon -->
+                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                     style="width: 45px; height: 45px; background: {{ 'var(--gradient-success)' if challenge.completed else 'var(--gradient-primary)' }};">
+                    <i class="fas {{ challenge.icon }} text-white"></i>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0 fw-bold">{{ challenge.name }}</h6>
+                        <span class="badge bg-info ms-2">
+                            <i class="fas fa-star"></i> {{ challenge.reward_exp }} {{ t('chal.exp_reward') }}
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-2">{{ challenge.desc }}</p>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mb-2" style="height: 20px;">
+                        {% set pct = (challenge.progress / challenge.target * 100) | round(0) | int if challenge.target > 0 else 0 %}
+                        <div class="progress-bar {{ 'bg-success' if challenge.completed else '' }}"
+                             role="progressbar"
+                             style="width: {{ pct }}%; background: {{ 'var(--gradient-success)' if challenge.completed else 'var(--gradient-primary)' }};"
+                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ challenge.progress }}/{{ challenge.target }}
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    {% if challenge.completed and challenge.id not in user.claimed_challenges %}
+                    <form method="POST" action="{{ url_for('claim_challenge', challenge_id=challenge.id) }}" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-gift"></i> {{ t('chal.claim') }}
+                        </button>
+                    </form>
+                    {% elif challenge.completed and challenge.id in user.claimed_challenges %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle"></i> {{ t('chal.claimed') }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted small">
+                        <i class="fas fa-spinner"></i> {{ t('chal.in_progress') }} - {{ pct }}%
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted text-center py-3">{{ t('stats.no_data') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Monthly Challenges -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> {{ t('chal.monthly') }}</h5>
+    </div>
+    <div class="card-body">
+        {% if monthly_challenges %}
+        {% for challenge in monthly_challenges %}
+        <div class="challenge-card {{ 'completed' if challenge.completed }}">
+            <div class="d-flex align-items-start gap-3">
+                <!-- Icon -->
+                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                     style="width: 45px; height: 45px; background: {{ 'var(--gradient-success)' if challenge.completed else 'var(--gradient-warning)' }};">
+                    <i class="fas {{ challenge.icon }} text-white"></i>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="mb-0 fw-bold">{{ challenge.name }}</h6>
+                        <span class="badge bg-info ms-2">
+                            <i class="fas fa-star"></i> {{ challenge.reward_exp }} {{ t('chal.exp_reward') }}
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-2">{{ challenge.desc }}</p>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mb-2" style="height: 20px;">
+                        {% set pct = (challenge.progress / challenge.target * 100) | round(0) | int if challenge.target > 0 else 0 %}
+                        <div class="progress-bar {{ 'bg-success' if challenge.completed else '' }}"
+                             role="progressbar"
+                             style="width: {{ pct }}%; background: {{ 'var(--gradient-success)' if challenge.completed else 'var(--gradient-warning)' }};"
+                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ challenge.progress }}/{{ challenge.target }}
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    {% if challenge.completed and challenge.id not in user.claimed_challenges %}
+                    <form method="POST" action="{{ url_for('claim_challenge', challenge_id=challenge.id) }}" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-gift"></i> {{ t('chal.claim') }}
+                        </button>
+                    </form>
+                    {% elif challenge.completed and challenge.id in user.claimed_challenges %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-check-circle"></i> {{ t('chal.claimed') }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted small">
+                        <i class="fas fa-spinner"></i> {{ t('chal.in_progress') }} - {{ pct }}%
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted text-center py-3">{{ t('stats.no_data') }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="text-center">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('act.back_dashboard') }}
+    </a>
+</div>
+{% endblock %}

@@ -2,8 +2,8 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0"><i class="fas fa-history"></i> Historial de Actividades</h3>
-    <span class="badge bg-info fs-6">{{ total }} actividades</span>
+    <h3 class="mb-0"><i class="fas fa-history"></i> {{ t('hist.title') }}</h3>
+    <span class="badge bg-info fs-6">{{ total }} {{ t('hist.activities_count') }}</span>
 </div>
 
 {% if activities %}
@@ -13,13 +13,14 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Ejercicio</th>
-                        <th>Duracion</th>
-                        <th>Intensidad</th>
-                        <th>Peso</th>
-                        <th>EXP</th>
-                        <th>Acciones</th>
+                        <th>{{ t('hist.date') }}</th>
+                        <th>{{ t('hist.exercise') }}</th>
+                        <th>{{ t('hist.duration') }}</th>
+                        <th>{{ t('hist.intensity') }}</th>
+                        <th>{{ t('act.details') }}</th>
+                        <th>{{ t('hist.weight') }}</th>
+                        <th>{{ t('hist.exp') }}</th>
+                        <th>{{ t('hist.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,11 +39,30 @@
                         <td>{{ activity.duration }} min</td>
                         <td>
                             {% if activity.intensity == 'low' %}
-                            <span class="badge bg-success">Baja</span>
+                            <span class="badge bg-success">{{ t('general.low') }}</span>
                             {% elif activity.intensity == 'medium' %}
-                            <span class="badge bg-warning">Media</span>
+                            <span class="badge bg-warning">{{ t('general.medium') }}</span>
                             {% else %}
-                            <span class="badge bg-danger">Alta</span>
+                            <span class="badge bg-danger">{{ t('general.high') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set details = activity.get('exercise_details', {}) %}
+                            {% if details %}
+                                {% if details.get('sets') %}
+                                    {{ details.sets }} {{ t('act.sets') | lower }}
+                                {% endif %}
+                                {% if details.get('reps') %}
+                                    {% if details.get('sets') %} x {% endif %}{{ details.reps }} {{ t('act.reps') | lower }}
+                                {% endif %}
+                                {% if details.get('exercise_weight') %}
+                                    @ {{ details.exercise_weight }} kg
+                                {% endif %}
+                                {% if details.get('distance_km') %}
+                                    {{ details.distance_km }} km
+                                {% endif %}
+                            {% else %}
+                                -
                             {% endif %}
                         </td>
                         <td>
@@ -55,13 +75,15 @@
                         <td><span class="text-success">+{{ "%.1f"|format(activity.exp_gained) }}</span></td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('edit_activity', activity_id=activity.id) }}" class="btn btn-outline-light" title="Editar">
+                                <a href="{{ url_for('edit_activity', activity_id=activity.id) }}"
+                                   class="btn btn-outline-{{ 'light' if current_theme == 'dark' else 'secondary' }}"
+                                   title="{{ t('general.edit') }}">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form method="POST" action="{{ url_for('delete_activity', activity_id=activity.id) }}" style="display:inline"
-                                      onsubmit="return confirm('Eliminar esta actividad? Se restara la EXP ganada.')">
+                                      onsubmit="return confirm('{{ t('hist.delete_confirm') }}')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                    <button type="submit" class="btn btn-outline-danger" title="{{ t('general.delete') }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -76,7 +98,7 @@
 </div>
 
 {% if total_pages > 1 %}
-<nav aria-label="Paginacion">
+<nav aria-label="Pagination">
     <ul class="pagination justify-content-center">
         <li class="page-item {{ 'disabled' if page <= 1 }}">
             <a class="page-link" href="{{ url_for('history', page=page-1) }}">
@@ -111,9 +133,9 @@
 <div class="card">
     <div class="card-body text-center py-5">
         <i class="fas fa-running fa-3x text-muted mb-3"></i>
-        <p class="text-muted fs-5">No hay actividades registradas aun.</p>
+        <p class="text-muted fs-5">{{ t('dash.no_activities') }}</p>
         <a href="{{ url_for('add_activity') }}" class="btn btn-primary btn-lg">
-            <i class="fas fa-plus"></i> Registrar Primera Actividad
+            <i class="fas fa-plus"></i> {{ t('dash.first_activity') }}
         </a>
     </div>
 </div>

@@ -5,48 +5,51 @@
     <div class="col-12 col-md-6 col-lg-4">
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0">Iniciar Sesión</h4>
+                <h4 class="mb-0">{{ t('auth.login') }}</h4>
             </div>
             <div class="card-body">
                 <form method="POST" class="needs-validation" novalidate>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Usuario</label>
+                        <label for="username" class="form-label">{{ t('auth.username') }}</label>
                         <input type="text" class="form-control form-control-lg" id="username" name="username" required>
                         <div class="invalid-feedback">
-                            Por favor ingresa tu nombre de usuario.
+                            {{ t('auth.username') }}
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Contraseña</label>
+                        <label for="password" class="form-label">{{ t('auth.password') }}</label>
                         <input type="password" class="form-control form-control-lg" id="password" name="password" required>
                         <div class="invalid-feedback">
-                            Por favor ingresa tu contraseña.
+                            {{ t('auth.password') }}
                         </div>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                            <i class="fas fa-sign-in-alt"></i> {{ t('auth.login_btn') }}
                         </button>
                         <button type="button" onclick="signInWithGoogle()" class="btn btn-danger btn-lg">
-                            <i class="fab fa-google"></i> Iniciar Sesión con Google
+                            <i class="fab fa-google"></i> {{ t('auth.google_login') }}
                         </button>
                     </div>
                 </form>
                 <div class="text-center mt-3">
-                    <p>¿No tienes una cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a></p>
+                    <p class="mb-1">{{ t('auth.no_account') }} <a href="{{ url_for('register') }}">{{ t('auth.register_here') }}</a></p>
+                    <p class="mb-0"><a href="{{ url_for('forgot_password') }}">{{ t('auth.forgot_password') }}</a></p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 function signInWithGoogle() {
     var provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider)
         .then(function(result) {
-            if (!result.user) throw new Error('No se obtuvo usuario de Google');
+            if (!result.user) throw new Error('No user from Google');
             return result.user.getIdToken();
         })
         .then(function(idToken) {
@@ -69,7 +72,7 @@ function signInWithGoogle() {
         })
         .catch(function(error) {
             console.error('Error:', error);
-            alert('Error al iniciar sesion con Google: ' + (error.message || 'Error desconocido'));
+            alert('Error: ' + (error.message || 'Unknown error'));
         });
 }
 </script>

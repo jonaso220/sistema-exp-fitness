@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="dark">
+<html lang="{{ current_lang }}" data-bs-theme="{{ current_theme }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>Sistema EXP Fitness</title>
     <meta name="description" content="Gamifica tu entrenamiento con Sistema EXP Fitness">
-    <meta name="theme-color" content="#0d1117">
+    <meta name="theme-color" content="{{ '#0d1117' if current_theme == 'dark' else '#ffffff' }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
@@ -14,6 +14,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* ===== CSS Variables - Dark Theme (default) ===== */
         :root {
             --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6);
             --gradient-success: linear-gradient(135deg, #10b981, #34d399);
@@ -22,16 +23,60 @@
             --gradient-info: linear-gradient(135deg, #06b6d4, #22d3ee);
             --card-bg: #161b22;
             --card-border: #30363d;
+            --body-bg: #0d1117;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --progress-bg: #21262d;
+            --achievement-unlocked-bg: linear-gradient(135deg, #1a1f2e, #1e293b);
+            --achievement-locked-bg: #21262d;
+            --achievement-locked-icon: #484f58;
+            --input-bg: #0d1117;
+            --input-border: #30363d;
+            --input-color: #c9d1d9;
+            --table-hover-bg: rgba(255, 255, 255, 0.05);
         }
+
+        /* ===== CSS Variables - Light Theme ===== */
+        [data-bs-theme="light"] {
+            --card-bg: #ffffff;
+            --card-border: #dee2e6;
+            --body-bg: #f8f9fa;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --progress-bg: #e9ecef;
+            --achievement-unlocked-bg: linear-gradient(135deg, #f0f0ff, #e8e8ff);
+            --achievement-locked-bg: #f8f9fa;
+            --achievement-locked-icon: #adb5bd;
+            --input-bg: #ffffff;
+            --input-border: #ced4da;
+            --input-color: #212529;
+            --table-hover-bg: rgba(0, 0, 0, 0.03);
+        }
+
+        /* ===== Base Styles ===== */
         body {
-            background-color: #0d1117;
-            color: #c9d1d9;
+            background-color: var(--body-bg);
+            color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
         }
+
+        /* ===== Navbar ===== */
         .navbar {
-            background: #161b22 !important;
-            border-bottom: 1px solid #30363d;
+            background: var(--card-bg) !important;
+            border-bottom: 1px solid var(--card-border);
         }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.25rem;
+            padding: 0.5rem 0;
+        }
+        .navbar-logo {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        /* ===== Cards ===== */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -42,14 +87,18 @@
             background: transparent;
             border-bottom: 1px solid var(--card-border);
         }
+
+        /* ===== Progress Bars ===== */
         .progress {
             height: 25px;
-            background-color: #21262d;
+            background-color: var(--progress-bg);
             border-radius: 12px;
         }
         .progress-bar {
             border-radius: 12px;
         }
+
+        /* ===== Stat Cards ===== */
         .stat-card {
             border-radius: 16px;
             padding: 1.25rem;
@@ -73,6 +122,8 @@
             margin-bottom: 0.5rem;
             opacity: 0.9;
         }
+
+        /* ===== Badges ===== */
         .level-badge {
             font-size: 1.5em;
             padding: 10px 20px;
@@ -88,6 +139,8 @@
             border-radius: 10px;
             display: inline-block;
         }
+
+        /* ===== Achievement Cards ===== */
         .achievement-card {
             text-align: center;
             padding: 1rem;
@@ -98,12 +151,12 @@
             transform: translateY(-3px);
         }
         .achievement-card.unlocked {
-            background: linear-gradient(135deg, #1a1f2e, #1e293b);
+            background: var(--achievement-unlocked-bg);
             border: 1px solid #6366f1;
         }
         .achievement-card.locked {
-            background: #21262d;
-            border: 1px solid #30363d;
+            background: var(--achievement-locked-bg);
+            border: 1px solid var(--card-border);
             opacity: 0.5;
         }
         .achievement-icon {
@@ -114,8 +167,10 @@
             color: #fbbf24;
         }
         .achievement-card.locked .achievement-icon {
-            color: #484f58;
+            color: var(--achievement-locked-icon);
         }
+
+        /* ===== Buttons ===== */
         .btn-primary {
             background: var(--gradient-primary);
             border: none;
@@ -123,37 +178,144 @@
         .btn-primary:hover {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
         }
-        .table {
-            color: #c9d1d9;
-        }
-        .badge.bg-success { background: #238636 !important; }
-        .badge.bg-warning { background: #9e6a03 !important; color: #fff !important; }
-        .badge.bg-danger { background: #da3633 !important; }
-        .badge.bg-info { background: #1f6feb !important; }
-        .navbar-brand {
-            display: flex;
-            align-items: center;
-            font-size: 1.25rem;
-            padding: 0.5rem 0;
-        }
-        .navbar-logo {
-            height: 40px;
-            margin-right: 10px;
-        }
-        .display-4 {
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
         .btn {
             white-space: nowrap;
             margin: 0.25rem;
             border-radius: 8px;
+        }
+
+        /* ===== Tables ===== */
+        .table {
+            color: var(--text-color);
         }
         .table-responsive {
             margin-bottom: 1rem;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+
+        /* ===== Badge Colors ===== */
+        .badge.bg-success { background: #238636 !important; }
+        .badge.bg-warning { background: #9e6a03 !important; color: #fff !important; }
+        .badge.bg-danger { background: #da3633 !important; }
+        .badge.bg-info { background: #1f6feb !important; }
+
+        /* ===== Typography ===== */
+        .display-4 {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        /* ===== Challenge Cards ===== */
+        .challenge-card {
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+        }
+        .challenge-card.completed {
+            border-color: #10b981;
+        }
+
+        /* ===== Heatmap ===== */
+        .heatmap-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            display: inline-block;
+            margin: 1px;
+        }
+
+        /* ===== Class Cards ===== */
+        .class-card {
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .class-card:hover {
+            transform: translateY(-5px);
+        }
+        .class-card.selected {
+            border-color: #fbbf24;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        }
+
+        /* ===== Theme Toggle Button ===== */
+        .theme-toggle-btn {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0;
+            margin: 0 0.5rem;
+        }
+        .theme-toggle-btn:hover {
+            background: var(--card-border);
+            color: #fbbf24;
+        }
+
+        /* ===== Light Theme Specific Overrides ===== */
+        [data-bs-theme="light"] .btn-outline-light {
+            color: #495057;
+            border-color: #dee2e6;
+        }
+        [data-bs-theme="light"] .btn-outline-light:hover {
+            background-color: #e9ecef;
+            color: #212529;
+            border-color: #dee2e6;
+        }
+        [data-bs-theme="light"] .text-muted {
+            color: var(--text-muted) !important;
+        }
+        [data-bs-theme="light"] .navbar {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        [data-bs-theme="light"] .card {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        [data-bs-theme="light"] .form-control,
+        [data-bs-theme="light"] .form-select {
+            background-color: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--input-color);
+        }
+        [data-bs-theme="light"] .form-control:focus,
+        [data-bs-theme="light"] .form-select:focus {
+            background-color: var(--input-bg);
+            color: var(--input-color);
+            border-color: #6366f1;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+        }
+        [data-bs-theme="light"] .table {
+            --bs-table-hover-bg: var(--table-hover-bg);
+        }
+        [data-bs-theme="light"] .page-link {
+            color: #6366f1;
+            background-color: #ffffff;
+            border-color: #dee2e6;
+        }
+        [data-bs-theme="light"] .page-item.active .page-link {
+            background-color: #6366f1;
+            border-color: #6366f1;
+            color: #ffffff;
+        }
+        [data-bs-theme="light"] .page-item.disabled .page-link {
+            color: #adb5bd;
+            background-color: #ffffff;
+        }
+
+        /* ===== Responsive ===== */
         @media (max-width: 576px) {
             .level-badge { font-size: 1.2em; padding: 8px 16px; }
             .streak-badge { padding: 4px 12px; }
@@ -164,38 +326,41 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg {{ 'navbar-dark' if current_theme == 'dark' else 'navbar-light' }}">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Sistema EXP Fitness Logo" class="navbar-logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="navbar-logo">
             </a>
             {% if current_user.is_authenticated %}
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center order-lg-last">
+                <button type="button" class="theme-toggle-btn" id="themeToggleBtn"
+                        title="{{ t('settings.theme') }}" aria-label="Toggle theme">
+                    <i class="fas {{ 'fa-sun' if current_theme == 'dark' else 'fa-moon' }}" id="themeToggleIcon"></i>
+                </button>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('add_activity') }}"><i class="fas fa-plus-circle"></i> Registrar</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('history') }}"><i class="fas fa-history"></i> Historial</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Perfil</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> {{ t('nav.dashboard') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_activity') }}"><i class="fas fa-plus-circle"></i> {{ t('nav.register_activity') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('history') }}"><i class="fas fa-history"></i> {{ t('nav.history') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('challenges') }}"><i class="fas fa-flag"></i> {{ t('nav.challenges') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('stats') }}"><i class="fas fa-chart-bar"></i> {{ t('nav.stats') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}"><i class="fas fa-user"></i> {{ t('nav.profile') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> {{ t('nav.settings') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> {{ t('nav.logout') }}</a></li>
                 </ul>
             </div>
+            {% else %}
+            <button type="button" class="theme-toggle-btn" id="themeToggleBtn"
+                    title="{{ t('settings.theme') }}" aria-label="Toggle theme">
+                <i class="fas {{ 'fa-sun' if current_theme == 'dark' else 'fa-moon' }}" id="themeToggleIcon"></i>
+            </button>
             {% endif %}
         </div>
     </nav>
-
     <div class="container py-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -207,10 +372,8 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         {% block content %}{% endblock %}
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
@@ -225,7 +388,7 @@
         });
     </script>
     <script>
-        // Bootstrap form validation + double-submit prevention
+        /* Form validation + double-submit prevention */
         (function () {
             'use strict';
             Array.from(document.querySelectorAll('.needs-validation')).forEach(function (form) {
@@ -244,6 +407,79 @@
                 }, false);
             });
         })();
+
+        /* Service worker registration */
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').then(function(reg) {
+                console.log('SW registered:', reg.scope);
+            }).catch(function(err) {
+                console.log('SW registration failed:', err);
+            });
+        }
+
+        /* Theme toggle */
+        (function() {
+            var btn = document.getElementById('themeToggleBtn');
+            var icon = document.getElementById('themeToggleIcon');
+            if (!btn || !icon) return;
+
+            btn.addEventListener('click', function() {
+                var html = document.documentElement;
+                var current = html.getAttribute('data-bs-theme');
+                var next = current === 'dark' ? 'light' : 'dark';
+
+                html.setAttribute('data-bs-theme', next);
+                localStorage.setItem('exp-fitness-theme', next);
+
+                /* Update icon */
+                icon.classList.remove('fa-sun', 'fa-moon');
+                icon.classList.add(next === 'dark' ? 'fa-sun' : 'fa-moon');
+
+                /* Update navbar class */
+                var navbar = document.querySelector('.navbar');
+                if (navbar) {
+                    navbar.classList.remove('navbar-dark', 'navbar-light');
+                    navbar.classList.add(next === 'dark' ? 'navbar-dark' : 'navbar-light');
+                }
+
+                /* Update theme-color meta tag */
+                var metaTheme = document.querySelector('meta[name="theme-color"]');
+                if (metaTheme) {
+                    metaTheme.setAttribute('content', next === 'dark' ? '#0d1117' : '#ffffff');
+                }
+
+                /* Save to server if user is authenticated */
+                var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMeta) {
+                    fetch('/settings', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfMeta.getAttribute('content')
+                        },
+                        body: 'theme=' + next + '&language=' + document.documentElement.lang
+                    }).catch(function() { /* silent fail */ });
+                }
+            });
+
+            /* Apply saved theme from localStorage on page load */
+            var savedTheme = localStorage.getItem('exp-fitness-theme');
+            if (savedTheme && savedTheme !== document.documentElement.getAttribute('data-bs-theme')) {
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                icon.classList.remove('fa-sun', 'fa-moon');
+                icon.classList.add(savedTheme === 'dark' ? 'fa-sun' : 'fa-moon');
+                var navbar = document.querySelector('.navbar');
+                if (navbar) {
+                    navbar.classList.remove('navbar-dark', 'navbar-light');
+                    navbar.classList.add(savedTheme === 'dark' ? 'navbar-dark' : 'navbar-light');
+                }
+                var metaTheme = document.querySelector('meta[name="theme-color"]');
+                if (metaTheme) {
+                    metaTheme.setAttribute('content', savedTheme === 'dark' ? '#0d1117' : '#ffffff');
+                }
+            }
+        })();
     </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

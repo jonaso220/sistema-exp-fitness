@@ -3,35 +3,35 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 text-center">
-        <h1 class="display-4 mb-4">Sistema EXP Fitness</h1>
+        <h1 class="display-4 mb-4">{{ t('landing.title') }}</h1>
         <p class="lead text-muted">
-            Gamifica tu entrenamiento y mantente motivado con nuestro sistema de niveles y experiencia.
+            {{ t('landing.subtitle') }}
         </p>
 
         <div class="card mt-4">
             <div class="card-body text-center py-4">
-                <h3 class="mb-4">Como funciona?</h3>
+                <h3 class="mb-4">{{ t('landing.how') }}</h3>
                 <div class="row mt-4 justify-content-center g-4">
                     <div class="col-md-4">
                         <div style="background: var(--gradient-primary); width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
                             <i class="fas fa-dumbbell fa-2x text-white"></i>
                         </div>
-                        <h5>Registra Actividades</h5>
-                        <p class="text-muted">Cada ejercicio te otorga EXP segun su intensidad y duracion</p>
+                        <h5>{{ t('landing.step1_title') }}</h5>
+                        <p class="text-muted">{{ t('landing.step1_desc') }}</p>
                     </div>
                     <div class="col-md-4">
                         <div style="background: var(--gradient-success); width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
                             <i class="fas fa-level-up-alt fa-2x text-white"></i>
                         </div>
-                        <h5>Sube de Nivel</h5>
-                        <p class="text-muted">Acumula EXP para subir de nivel y desbloquear logros</p>
+                        <h5>{{ t('landing.step2_title') }}</h5>
+                        <p class="text-muted">{{ t('landing.step2_desc') }}</p>
                     </div>
                     <div class="col-md-4">
                         <div style="background: var(--gradient-warning); width: 70px; height: 70px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
                             <i class="fas fa-chart-line fa-2x text-white"></i>
                         </div>
-                        <h5>Manten el Progreso</h5>
-                        <p class="text-muted">Manten tu racha diaria y evita perder EXP por inactividad</p>
+                        <h5>{{ t('landing.step3_title') }}</h5>
+                        <p class="text-muted">{{ t('landing.step3_desc') }}</p>
                     </div>
                 </div>
             </div>
@@ -39,10 +39,10 @@
 
         <div class="mt-4 text-center">
             <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-3">
-                <i class="fas fa-user-plus"></i> Registrarse
+                <i class="fas fa-user-plus"></i> {{ t('auth.register') }}
             </a>
-            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesion
+            <a href="{{ url_for('login') }}" class="btn btn-outline-{{ 'light' if current_theme == 'dark' else 'secondary' }} btn-lg">
+                <i class="fas fa-sign-in-alt"></i> {{ t('auth.login') }}
             </a>
         </div>
     </div>
