@@ -88,8 +88,8 @@
             <div class="col-6 col-md-4 col-lg-3">
                 <div class="achievement-card {{ 'unlocked' if a.unlocked else 'locked' }}">
                     <div class="achievement-icon"><i class="fas {{ a.icon }}"></i></div>
-                    <div class="fw-bold" style="font-size: 0.9rem;">{{ a.name }}</div>
-                    <div class="text-muted" style="font-size: 0.8rem;">{{ a.desc }}</div>
+                    <div class="fw-bold" style="font-size: 0.9rem;">{{ a.name_en if current_lang == 'en' and a.name_en else a.name }}</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ a.desc_en if current_lang == 'en' and a.desc_en else a.desc }}</div>
                 </div>
             </div>
             {% endfor %}
@@ -154,6 +154,9 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    var gridColor = isDark ? '#21262d' : '#dee2e6';
+    var textColor = isDark ? '#8b949e' : '#6c757d';
     var weightDates = {{ weight_dates|tojson }};
     var weightValues = {{ weight_values|tojson }};
     if (weightDates.length > 0) {
@@ -176,8 +179,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } },
-                    y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e' } }
+                    x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                    y: { grid: { color: gridColor }, ticks: { color: textColor } }
                 }
             }
         });

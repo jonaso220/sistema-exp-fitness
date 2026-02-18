@@ -448,18 +448,14 @@
                     metaTheme.setAttribute('content', next === 'dark' ? '#0d1117' : '#ffffff');
                 }
 
-                /* Save to server if user is authenticated */
-                var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-                if (csrfMeta) {
-                    fetch('/settings', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': csrfMeta.getAttribute('content')
-                        },
-                        body: 'theme=' + next + '&language=' + document.documentElement.lang
-                    }).catch(function() { /* silent fail */ });
-                }
+                /* Save theme preference to server */
+                fetch('/toggle-theme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'theme=' + next + '&language=' + document.documentElement.lang
+                }).catch(function() { /* silent fail */ });
             });
 
             /* Apply saved theme from localStorage on page load */

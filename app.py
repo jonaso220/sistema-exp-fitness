@@ -265,16 +265,22 @@ class User(UserMixin):
 
 
 # =============================================================================
-# i18n CONTEXT PROCESSOR
+# i18n HELPERS
 # =============================================================================
+
+def _get_lang():
+    if current_user.is_authenticated:
+        return getattr(current_user, 'language', 'es') or 'es'
+    return request.cookies.get('lang', 'es')
+
+def _t(key):
+    lang = _get_lang()
+    translations = TRANSLATIONS.get(lang, TRANSLATIONS['es'])
+    return translations.get(key, key)
 
 @app.context_processor
 def inject_i18n():
-    lang = 'es'
-    if current_user.is_authenticated:
-        lang = getattr(current_user, 'language', 'es') or 'es'
-    else:
-        lang = request.cookies.get('lang', 'es')
+    lang = _get_lang()
     translations = TRANSLATIONS.get(lang, TRANSLATIONS['es'])
     def t(key):
         return translations.get(key, key)
@@ -355,18 +361,25 @@ def _get_activity_date(activity_dict):
             return None
     return d
 
-def calculate_streak(user_id):
+def calculate_streak(user_id, activities=None):
     today = datetime.utcnow().date()
-    try:
-        docs = db.collection('activities').where('user_id', '==', user_id).get()
-    except Exception as e:
-        logger.error(f'Error calculating streak for {user_id}: {e}')
-        return 0
-    activity_dates = set()
-    for doc in docs:
-        d = _get_activity_date(doc.to_dict())
-        if d:
-            activity_dates.add(d)
+    if activities is None:
+        try:
+            docs = db.collection('activities').where('user_id', '==', user_id).get()
+        except Exception as e:
+            logger.error(f'Error calculating streak for {user_id}: {e}')
+            return 0
+        activity_dates = set()
+        for doc in docs:
+            d = _get_activity_date(doc.to_dict())
+            if d:
+                activity_dates.add(d)
+    else:
+        activity_dates = set()
+        for a in activities:
+            d = _get_activity_date(a)
+            if d:
+                activity_dates.add(d)
     if not activity_dates:
         return 0
     last_date = max(activity_dates)
@@ -420,7 +433,7 @@ def apply_inactivity_penalty(user):
             new_exp = max(0, user.exp - penalty)
             user.update_fields(exp=new_exp, last_penalty_date=today_str)
             user.exp = new_exp
-            flash(f'Penalizacion por {inactive_days} dia(s) de inactividad: -{penalty:.1f} EXP', 'warning')
+            flash(_t('flash.penalty').format(days=inactive_days, exp=f'{penalty:.1f}'), 'warning')
             return
     user.update_fields(last_penalty_date=today_str)
 
@@ -447,22 +460,27 @@ def get_all_activities(user_id):
     activities.sort(key=sort_key, reverse=True)
     return activities
 
-def get_activities_in_range(user_id, start_date, end_date):
-    all_acts = get_all_activities(user_id)
-    return [a for a in all_acts if _get_activity_date(a) and start_date <= _get_activity_date(a) <= end_date]
+def get_activities_in_range(user_id, start_date, end_date, activities=None):
+    all_acts = activities if activities is not None else get_all_activities(user_id)
+    result = []
+    for a in all_acts:
+        d = _get_activity_date(a)
+        if d and start_date <= d <= end_date:
+            result.append(a)
+    return result
 
 # =============================================================================
 # CHALLENGE HELPERS
 # =============================================================================
 
-def get_current_challenges(user_id, user=None):
+def get_current_challenges(user_id, user=None, all_activities=None):
     today = datetime.utcnow().date()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
     month_start = today.replace(day=1)
-    week_activities = get_activities_in_range(user_id, week_start, week_end)
-    month_activities = get_activities_in_range(user_id, month_start, today)
-    streak = calculate_streak(user_id) if user else 0
+    week_activities = get_activities_in_range(user_id, week_start, week_end, activities=all_activities)
+    month_activities = get_activities_in_range(user_id, month_start, today, activities=all_activities)
+    streak = calculate_streak(user_id, activities=all_activities) if user else 0
     lang = getattr(user, 'language', 'es') if user else 'es'
     nk = 'name_en' if lang == 'en' else 'name_es'
     dk = 'desc_en' if lang == 'en' else 'desc_es'
@@ -598,7 +616,7 @@ def dashboard():
     total_activities = len(all_activities)
     exp_for_next = calculate_exp_for_next_level(current_user.level)
     progress = (current_user.exp / exp_for_next) * 100 if exp_for_next > 0 else 0
-    streak = calculate_streak(current_user.id)
+    streak = calculate_streak(current_user.id, activities=all_activities)
     achievements = get_achievements(current_user, total_activities, streak)
     unlocked_count = sum(1 for a in achievements if a['unlocked'])
     weight_dates, weight_values = [], []
@@ -613,7 +631,7 @@ def dashboard():
         type_counts[t] = type_counts.get(t, 0) + 1
         total_minutes += a.get('duration', 0)
     heatmap = get_heatmap_data(all_activities)
-    weekly_challenges, monthly_challenges = get_current_challenges(current_user.id, current_user)
+    weekly_challenges, monthly_challenges = get_current_challenges(current_user.id, current_user, all_activities=all_activities)
     show_weigh_reminder = check_weigh_in_reminder(all_activities) if all_activities else False
     user_class = PLAYER_CLASSES.get(current_user.player_class) if current_user.player_class else None
     return render_template('dashboard.html', user=current_user, activities=recent_activities,
@@ -631,15 +649,15 @@ def add_activity():
         exercise_type = request.form.get('exercise_type', '').strip()
         intensity = request.form.get('intensity', 'medium')
         if exercise_type not in VALID_EXERCISE_TYPES:
-            flash('Tipo de ejercicio no valido.', 'danger'); return redirect(url_for('add_activity'))
+            flash(_t('flash.invalid_exercise'), 'danger'); return redirect(url_for('add_activity'))
         if intensity not in VALID_INTENSITIES:
-            flash('Intensidad no valida.', 'danger'); return redirect(url_for('add_activity'))
+            flash(_t('flash.invalid_intensity'), 'danger'); return redirect(url_for('add_activity'))
         duration = validate_positive_int(request.form.get('duration'), 'duration', 1, 1440)
         if duration is None:
-            flash('Duracion debe ser entre 1 y 1440 minutos.', 'danger'); return redirect(url_for('add_activity'))
+            flash(_t('flash.invalid_duration'), 'danger'); return redirect(url_for('add_activity'))
         weight = validate_positive_float(request.form.get('weight'), 'weight', 10, 500)
         if weight is None:
-            flash('Peso debe ser entre 10 y 500 kg.', 'danger'); return redirect(url_for('add_activity'))
+            flash(_t('flash.invalid_weight'), 'danger'); return redirect(url_for('add_activity'))
         has_evidence = 'evidence' in request.form
         evidence_url = validate_url(request.form.get('evidence_url', ''))
         evidence_photo = validate_base64_image(request.form.get('evidence_photo', ''))
@@ -670,20 +688,20 @@ def add_activity():
             db.collection('activities').add(activity_data)
         except Exception as e:
             logger.error(f'Error saving activity: {e}')
-            flash('Error al guardar la actividad.', 'danger'); return redirect(url_for('add_activity'))
+            flash(_t('flash.activity_save_error'), 'danger'); return redirect(url_for('add_activity'))
         current_user.exp += exp_gained
         current_user.weight = weight
         while current_user.exp >= calculate_exp_for_next_level(current_user.level):
             current_user.exp -= calculate_exp_for_next_level(current_user.level)
             current_user.level += 1
-            flash(f'Felicitaciones! Has subido al nivel {current_user.level}!', 'success')
+            flash(_t('flash.level_up').format(level=current_user.level), 'success')
         try:
             current_user.update_fields(exp=current_user.exp, weight=current_user.weight, level=current_user.level)
         except Exception as e:
             logger.error(f'Error updating user after activity: {e}')
-            flash('Actividad guardada pero hubo un error al actualizar tu perfil.', 'warning')
+            flash(_t('flash.profile_update_error'), 'warning')
             return redirect(url_for('dashboard'))
-        flash(f'Actividad registrada: +{exp_gained:.1f} EXP', 'success')
+        flash(_t('flash.activity_saved').format(exp=f'{exp_gained:.1f}'), 'success')
         return redirect(url_for('dashboard'))
     return render_template('add_activity.html', user_weight=current_user.weight,
         exercise_types=VALID_EXERCISE_TYPES, strength_exercises=STRENGTH_EXERCISES,
@@ -695,26 +713,26 @@ def edit_activity(activity_id):
     try:
         doc = db.collection('activities').document(activity_id).get()
         if not doc.exists:
-            flash('Actividad no encontrada.', 'danger'); return redirect(url_for('history'))
+            flash(_t('flash.activity_not_found'), 'danger'); return redirect(url_for('history'))
         activity = doc.to_dict(); activity['id'] = doc.id
         if activity.get('user_id') != current_user.id:
-            flash('No tienes permiso para editar esta actividad.', 'danger'); return redirect(url_for('history'))
+            flash(_t('flash.no_permission'), 'danger'); return redirect(url_for('history'))
     except Exception as e:
         logger.error(f'Error fetching activity {activity_id}: {e}')
-        flash('Error al cargar la actividad.', 'danger'); return redirect(url_for('history'))
+        flash(_t('flash.activity_not_found'), 'danger'); return redirect(url_for('history'))
     if request.method == 'POST':
         exercise_type = request.form.get('exercise_type', '').strip()
         intensity = request.form.get('intensity', 'medium')
         if exercise_type not in VALID_EXERCISE_TYPES:
-            flash('Tipo de ejercicio no valido.', 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
+            flash(_t('flash.invalid_exercise'), 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
         if intensity not in VALID_INTENSITIES:
-            flash('Intensidad no valida.', 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
+            flash(_t('flash.invalid_intensity'), 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
         duration = validate_positive_int(request.form.get('duration'), 'duration', 1, 1440)
         if duration is None:
-            flash('Duracion debe ser entre 1 y 1440 minutos.', 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
+            flash(_t('flash.invalid_duration'), 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
         weight = validate_positive_float(request.form.get('weight'), 'weight', 10, 500)
         if weight is None:
-            flash('Peso debe ser entre 10 y 500 kg.', 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
+            flash(_t('flash.invalid_weight'), 'danger'); return redirect(url_for('edit_activity', activity_id=activity_id))
         has_evidence = 'evidence' in request.form
         evidence_url = validate_url(request.form.get('evidence_url', ''))
         evidence_photo = validate_base64_image(request.form.get('evidence_photo', ''))
@@ -741,11 +759,15 @@ def edit_activity(activity_id):
                 'weight_recorded': weight, 'exp_gained': new_exp, 'exercise_details': exercise_details, 'notes': notes,
             })
             current_user.exp = max(0, current_user.exp + (new_exp - old_exp))
-            current_user.update_fields(exp=current_user.exp, weight=weight)
-            flash('Actividad actualizada.', 'success')
+            while current_user.exp >= calculate_exp_for_next_level(current_user.level):
+                current_user.exp -= calculate_exp_for_next_level(current_user.level)
+                current_user.level += 1
+                flash(_t('flash.level_up').format(level=current_user.level), 'success')
+            current_user.update_fields(exp=current_user.exp, weight=weight, level=current_user.level)
+            flash(_t('flash.activity_updated'), 'success')
         except Exception as e:
             logger.error(f'Error updating activity {activity_id}: {e}')
-            flash('Error al actualizar la actividad.', 'danger')
+            flash(_t('flash.activity_update_error'), 'danger')
         return redirect(url_for('history'))
     return render_template('edit_activity.html', activity=activity,
         exercise_types=VALID_EXERCISE_TYPES, strength_exercises=STRENGTH_EXERCISES,
@@ -757,10 +779,10 @@ def delete_activity(activity_id):
     try:
         doc = db.collection('activities').document(activity_id).get()
         if not doc.exists:
-            flash('Actividad no encontrada.', 'danger'); return redirect(url_for('history'))
+            flash(_t('flash.activity_not_found'), 'danger'); return redirect(url_for('history'))
         activity = doc.to_dict()
         if activity.get('user_id') != current_user.id:
-            flash('No tienes permiso para eliminar esta actividad.', 'danger'); return redirect(url_for('history'))
+            flash(_t('flash.no_permission'), 'danger'); return redirect(url_for('history'))
         exp_lost = activity.get('exp_gained', 0)
         db.collection('activities').document(activity_id).delete()
         try:
@@ -768,12 +790,12 @@ def delete_activity(activity_id):
             current_user.update_fields(exp=current_user.exp)
         except Exception as ue:
             logger.error(f'EXP update failed after delete: {ue}')
-            flash('Actividad eliminada pero hubo un error al actualizar tu EXP.', 'warning')
+            flash(_t('flash.profile_update_error'), 'warning')
             return redirect(url_for('history'))
-        flash(f'Actividad eliminada. -{exp_lost:.1f} EXP', 'info')
+        flash(_t('flash.activity_deleted').format(exp=f'{exp_lost:.1f}'), 'info')
     except Exception as e:
         logger.error(f'Error deleting activity {activity_id}: {e}')
-        flash('Error al eliminar la actividad.', 'danger')
+        flash(_t('flash.activity_delete_error'), 'danger')
     return redirect(url_for('history'))
 
 @app.route('/profile')
@@ -783,7 +805,7 @@ def profile():
     total_activities = len(all_activities)
     total_exp = sum(a.get('exp_gained', 0) for a in all_activities)
     total_minutes = sum(a.get('duration', 0) for a in all_activities)
-    streak = calculate_streak(current_user.id)
+    streak = calculate_streak(current_user.id, activities=all_activities)
     achievements = get_achievements(current_user, total_activities, streak)
     weight_dates, weight_values = [], []
     for a in reversed(all_activities):
@@ -815,23 +837,23 @@ def history():
 def select_class():
     if request.method == 'POST':
         if current_user.level < 5:
-            flash('Necesitas nivel 5 para elegir clase.', 'danger'); return redirect(url_for('select_class'))
+            flash(_t('flash.class_level_req'), 'danger'); return redirect(url_for('select_class'))
         if current_user.class_selected_at:
             try:
                 sa = datetime.fromisoformat(current_user.class_selected_at) if isinstance(current_user.class_selected_at, str) else current_user.class_selected_at
                 days = (datetime.utcnow() - sa).days if hasattr(sa, 'date') else (datetime.utcnow().date() - sa).days
                 if days < 30:
-                    flash(f'Solo puedes cambiar de clase una vez al mes. Espera {30-days} dias.', 'warning')
+                    flash(_t('flash.class_cooldown').format(days=30-days), 'warning')
                     return redirect(url_for('select_class'))
             except Exception:
                 pass
         chosen = request.form.get('player_class', '').strip()
         if chosen not in PLAYER_CLASSES:
-            flash('Clase no valida.', 'danger'); return redirect(url_for('select_class'))
+            flash(_t('flash.class_invalid'), 'danger'); return redirect(url_for('select_class'))
         current_user.update_fields(player_class=chosen, class_selected_at=datetime.utcnow().isoformat())
         cls = PLAYER_CLASSES[chosen]
         lang = current_user.language or 'es'
-        flash(f'Has elegido la clase {cls.get(f"name_{lang}", cls["name_es"])}! +30% EXP en tu especialidad.', 'success')
+        flash(_t('flash.class_selected').format(name=cls.get(f'name_{lang}', cls['name_es'])), 'success')
         return redirect(url_for('dashboard'))
     return render_template('select_class.html', user=current_user, classes=PLAYER_CLASSES)
 
@@ -848,20 +870,20 @@ def claim_challenge(challenge_id):
     weekly, monthly = get_current_challenges(current_user.id, current_user)
     target = next((c for c in weekly + monthly if c['id'] == challenge_id), None)
     if not target:
-        flash('Reto no encontrado.', 'danger'); return redirect(url_for('challenges'))
+        flash(_t('flash.challenge_not_found'), 'danger'); return redirect(url_for('challenges'))
     if not target['completed']:
-        flash('Aun no has completado este reto.', 'warning'); return redirect(url_for('challenges'))
+        flash(_t('flash.challenge_not_complete'), 'warning'); return redirect(url_for('challenges'))
     if challenge_id in current_user.claimed_challenges:
-        flash('Ya reclamaste esta recompensa.', 'info'); return redirect(url_for('challenges'))
+        flash(_t('flash.challenge_already_claimed'), 'info'); return redirect(url_for('challenges'))
     reward = target['reward_exp']
     current_user.exp += reward
     claimed = current_user.claimed_challenges + [challenge_id]
     while current_user.exp >= calculate_exp_for_next_level(current_user.level):
         current_user.exp -= calculate_exp_for_next_level(current_user.level)
         current_user.level += 1
-        flash(f'Has subido al nivel {current_user.level}!', 'success')
+        flash(_t('flash.level_up').format(level=current_user.level), 'success')
     current_user.update_fields(exp=current_user.exp, level=current_user.level, claimed_challenges=claimed)
-    flash(f'Recompensa reclamada: +{reward} EXP!', 'success')
+    flash(_t('flash.challenge_claimed').format(exp=reward), 'success')
     return redirect(url_for('challenges'))
 
 # --- STATISTICS ---
@@ -872,6 +894,21 @@ def stats():
     return render_template('stats.html', user=current_user,
         weekly_exp=get_weekly_exp_data(all_activities), heatmap=get_heatmap_data(all_activities),
         monthly_summary=get_monthly_summary(all_activities), intensity_dist=get_intensity_distribution(all_activities))
+
+# --- THEME TOGGLE (works without auth) ---
+@app.route('/toggle-theme', methods=['POST'])
+@csrf.exempt
+def toggle_theme():
+    theme = request.form.get('theme', 'dark')
+    language = request.form.get('language', request.cookies.get('lang', 'es'))
+    if theme not in ('dark', 'light'): theme = 'dark'
+    if language not in ('es', 'en'): language = 'es'
+    resp = make_response('', 204)
+    resp.set_cookie('theme', theme, max_age=365*24*3600)
+    resp.set_cookie('lang', language, max_age=365*24*3600)
+    if current_user.is_authenticated:
+        current_user.update_fields(theme=theme, language=language)
+    return resp
 
 # --- SETTINGS ---
 @app.route('/settings', methods=['GET', 'POST'])
@@ -886,7 +923,7 @@ def settings():
         resp = make_response(redirect(url_for('settings')))
         resp.set_cookie('lang', language, max_age=365*24*3600)
         resp.set_cookie('theme', theme, max_age=365*24*3600)
-        flash('Ajustes guardados.', 'success')
+        flash(_t('flash.settings_saved'), 'success')
         return resp
     return render_template('settings.html', user=current_user)
 
@@ -895,37 +932,37 @@ def settings():
 def register():
     if request.method == 'POST':
         if _is_rate_limited(f'register:{request.remote_addr}', 5, 300):
-            flash('Demasiados intentos. Espera unos minutos.', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.rate_limited'), 'danger'); return redirect(url_for('register'))
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         weight_raw = request.form.get('weight')
         email = request.form.get('email', '').strip() or None
         if not username or not re.match(r'^[a-zA-Z0-9_-]{3,30}$', username):
-            flash('Usuario debe tener 3-30 caracteres (letras, numeros, _ y -).', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.username_rules'), 'danger'); return redirect(url_for('register'))
         if not password or len(password) < 8:
-            flash('La contrasena debe tener al menos 8 caracteres.', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.password_min'), 'danger'); return redirect(url_for('register'))
         weight = validate_positive_float(weight_raw, 'weight', 10, 500)
         if weight is None:
-            flash('Peso debe ser entre 10 y 500 kg.', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.invalid_weight'), 'danger'); return redirect(url_for('register'))
         if email and not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
-            flash('Email no valido.', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.invalid_email'), 'danger'); return redirect(url_for('register'))
         if User.get_by_field('username', username):
-            flash('El nombre de usuario ya existe.', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.username_taken'), 'danger'); return redirect(url_for('register'))
         try:
             doc_ref = db.collection('users').document()
             user = User(id=doc_ref.id, username=username, password=generate_password_hash(password), email=email, weight=weight)
             user.save()
-            flash('Registro exitoso! Por favor inicia sesion.', 'success'); return redirect(url_for('login'))
+            flash(_t('flash.register_success'), 'success'); return redirect(url_for('login'))
         except Exception as e:
             logger.error(f'Error registering user: {e}')
-            flash('Error al registrar. Intenta de nuevo.', 'danger'); return redirect(url_for('register'))
+            flash(_t('flash.register_error'), 'danger'); return redirect(url_for('register'))
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         if _is_rate_limited(f'login:{request.remote_addr}', 5, 60):
-            flash('Demasiados intentos. Espera un minuto.', 'danger'); return redirect(url_for('login'))
+            flash(_t('flash.rate_limited'), 'danger'); return redirect(url_for('login'))
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         user = User.get_by_field('username', username)
@@ -933,7 +970,7 @@ def login():
             login_user(user); return redirect(url_for('dashboard'))
         else:
             logger.warning(f'Failed login for: {username} from {request.remote_addr}')
-            flash('Usuario o contrasena incorrectos.', 'danger')
+            flash(_t('flash.invalid_credentials'), 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -945,14 +982,14 @@ def logout():
 def auth_google():
     id_token = request.form.get('id_token')
     if not id_token:
-        flash('Error al iniciar sesion con Google.', 'danger'); return redirect(url_for('login'))
+        flash(_t('flash.google_error'), 'danger'); return redirect(url_for('login'))
     try:
         decoded_token = firebase_auth.verify_id_token(id_token)
         uid = decoded_token['uid']; email = decoded_token.get('email')
         user = User.get_by_field('google_id', uid)
         if not user:
             if email and User.get_by_field('email', email):
-                flash('El email ya esta registrado con otra cuenta.', 'danger'); return redirect(url_for('login'))
+                flash(_t('flash.email_taken'), 'danger'); return redirect(url_for('login'))
             username = email.split('@')[0] if email else uid[:8]
             base_username = username; counter = 1
             while User.get_by_field('username', username):
@@ -960,14 +997,14 @@ def auth_google():
             doc_ref = db.collection('users').document()
             user = User(id=doc_ref.id, username=username, email=email, google_id=uid)
             user.save(); login_user(user)
-            flash('Cuenta creada! Ingresa tu peso inicial.', 'success'); return redirect(url_for('complete_profile'))
+            flash(_t('flash.google_created'), 'success'); return redirect(url_for('complete_profile'))
         login_user(user); return redirect(url_for('dashboard'))
     except firebase_admin.exceptions.FirebaseError as e:
         logger.error(f'Firebase auth error: {e}')
-        flash('Error al verificar la sesion de Google.', 'danger'); return redirect(url_for('login'))
+        flash(_t('flash.google_verify_error'), 'danger'); return redirect(url_for('login'))
     except Exception as e:
         logger.error(f'Unexpected auth error: {e}')
-        flash('Error al iniciar sesion.', 'danger'); return redirect(url_for('login'))
+        flash(_t('flash.login_error'), 'danger'); return redirect(url_for('login'))
 
 @app.route('/complete-profile', methods=['GET', 'POST'])
 @login_required
@@ -975,13 +1012,13 @@ def complete_profile():
     if request.method == 'POST':
         weight = validate_positive_float(request.form.get('weight'), 'weight', 10, 500)
         if weight is None:
-            flash('Peso debe ser entre 10 y 500 kg.', 'danger'); return redirect(url_for('complete_profile'))
+            flash(_t('flash.invalid_weight'), 'danger'); return redirect(url_for('complete_profile'))
         try:
             current_user.update_fields(weight=weight)
-            flash('Perfil completado!', 'success'); return redirect(url_for('dashboard'))
+            flash(_t('flash.profile_completed'), 'success'); return redirect(url_for('dashboard'))
         except Exception as e:
             logger.error(f'Error completing profile: {e}')
-            flash('Error al guardar.', 'danger')
+            flash(_t('flash.save_error'), 'danger')
     return render_template('complete_profile.html')
 
 # --- PASSWORD RESET ---
@@ -990,7 +1027,7 @@ def forgot_password():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         if _is_rate_limited(f'reset:{request.remote_addr}', 3, 300):
-            flash('Demasiados intentos. Espera unos minutos.', 'danger'); return redirect(url_for('forgot_password'))
+            flash(_t('flash.rate_limited'), 'danger'); return redirect(url_for('forgot_password'))
         user = User.get_by_field('username', username)
         if user:
             token = secrets.token_urlsafe(32)
@@ -1001,7 +1038,7 @@ def forgot_password():
                 logger.info(f'Password reset link for {username}: {url_for("reset_password", token=token, _external=True)}')
             except Exception as e:
                 logger.error(f'Error creating reset token: {e}')
-        flash('Si existe una cuenta con ese usuario, se ha generado un enlace de restablecimiento.', 'info')
+        flash(_t('flash.reset_link_sent'), 'info')
         return redirect(url_for('login'))
     return render_template('forgot_password.html')
 
@@ -1018,29 +1055,29 @@ def reset_password(token):
                 if age.total_seconds() < 3600:
                     reset_doc = {'id': doc.id, **rd}; break
         if not reset_doc:
-            flash('Enlace invalido o expirado.', 'danger'); return redirect(url_for('login'))
+            flash(_t('flash.reset_link_invalid'), 'danger'); return redirect(url_for('login'))
     except Exception as e:
         logger.error(f'Error validating reset token: {e}')
-        flash('Error al validar el enlace.', 'danger'); return redirect(url_for('login'))
+        flash(_t('flash.reset_link_error'), 'danger'); return redirect(url_for('login'))
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm = request.form.get('confirm_password', '')
         if len(password) < 8:
-            flash('La contrasena debe tener al menos 8 caracteres.', 'danger')
+            flash(_t('flash.password_min'), 'danger')
             return redirect(url_for('reset_password', token=token))
         if password != confirm:
-            flash('Las contrasenas no coinciden.', 'danger')
+            flash(_t('flash.passwords_no_match'), 'danger')
             return redirect(url_for('reset_password', token=token))
         try:
             user = User.get_by_id(reset_doc['user_id'])
             if user:
                 user.update_fields(password=generate_password_hash(password))
                 db.collection('password_resets').document(reset_doc['id']).update({'used': True})
-                flash('Contrasena restablecida. Inicia sesion.', 'success'); return redirect(url_for('login'))
-            flash('Usuario no encontrado.', 'danger')
+                flash(_t('flash.password_reset_ok'), 'success'); return redirect(url_for('login'))
+            flash(_t('flash.user_not_found'), 'danger')
         except Exception as e:
             logger.error(f'Error resetting password: {e}')
-            flash('Error al restablecer la contrasena.', 'danger')
+            flash(_t('flash.password_reset_error'), 'danger')
         return redirect(url_for('login'))
     return render_template('reset_password.html', token=token)
 
@@ -1051,6 +1088,8 @@ def reset_password(token):
 @app.route('/api/v1/auth/login', methods=['POST'])
 @csrf.exempt
 def api_login():
+    if _is_rate_limited(f'api_login:{request.remote_addr}', 10, 60):
+        return jsonify({'error': 'Too many attempts. Try again later.'}), 429
     data = request.get_json()
     if not data: return jsonify({'error': 'JSON body required'}), 400
     user = User.get_by_field('username', data.get('username', ''))
@@ -1096,7 +1135,18 @@ def api_create_activity():
         return jsonify({'error': 'duration must be 1-1440'}), 400
     duration = int(duration)
     weight = data.get('weight')
-    has_evidence = data.get('has_evidence', False)
+    if weight is not None:
+        if not isinstance(weight, (int, float)) or weight < 10 or weight > 500:
+            return jsonify({'error': 'weight must be 10-500'}), 400
+        weight = float(weight)
+    has_evidence = bool(data.get('has_evidence', False))
+    exercise_details = data.get('exercise_details', {})
+    if not isinstance(exercise_details, dict):
+        exercise_details = {}
+    notes = data.get('notes', '')
+    if not isinstance(notes, str):
+        notes = ''
+    notes = notes[:500]
     exp_gained = calculate_exp_gain(duration, intensity, has_evidence, current_user, et)
     if weight and current_user.weight:
         wd = current_user.weight - weight
@@ -1105,7 +1155,7 @@ def api_create_activity():
     ad = {'user_id': current_user.id, 'date': datetime.utcnow(), 'exercise_type': et, 'duration': duration,
           'intensity': intensity, 'exp_gained': exp_gained, 'has_evidence': has_evidence, 'evidence_url': '',
           'evidence_photo': '', 'weight_recorded': weight or current_user.weight,
-          'exercise_details': data.get('exercise_details', {}), 'notes': data.get('notes', '')[:500]}
+          'exercise_details': exercise_details, 'notes': notes}
     try:
         _, doc_ref = db.collection('activities').add(ad)
     except Exception as e:
