@@ -1,0 +1,15 @@
+[build]
+  command = "bash build_netlify.sh"
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+# All requests that don't match a static file in "public/" are rewritten
+# to the serverless function.  Static assets hit the CDN directly because
+# force defaults to false, so existing files take priority.
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
