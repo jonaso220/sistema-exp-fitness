@@ -27,3 +27,20 @@ instance/
 .DS_Store
 serviceAccountKey.json
 firebase-credentials.json
+
+# Netlify build artifacts
+public/
+netlify/functions/api/app.py
+netlify/functions/api/translations.py
+netlify/functions/api/templates/
+# Pip packages installed into the function dir during build
+netlify/functions/api/flask/
+netlify/functions/api/flask_login/
+netlify/functions/api/flask_wtf/
+netlify/functions/api/werkzeug/
+netlify/functions/api/firebase_admin/
+netlify/functions/api/google/
+netlify/functions/api/grpc/
+netlify/functions/api/bin/
+netlify/functions/api/*.dist-info/
+netlify/functions/api/*.egg-info/
